@@ -35,6 +35,9 @@ class RequestTarget(models.Model):
         self.key = md5.hexdigest()[:8]
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return '[%s] <%s>' % (self.key, self.url)
+
 
 class WechatUser(models.Model):
     """ 微信用户
