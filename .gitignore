@@ -114,3 +114,5 @@ target/
 
 # Project
 /wxauth/settings.py
+/media
+/static
