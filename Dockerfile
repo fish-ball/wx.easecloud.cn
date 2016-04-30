@@ -7,4 +7,4 @@ ADD ./* ./
 
 RUN chmod +x build.sh && ./build.sh
 
-CMD ["gunicorn", "-b0.0.0.0:8000", "-w4", "-keventlet", "--reload" "ecerp.wsgi"]
+CMD ["gunicorn", "-b0.0.0.0:8000", "-w4", "-keventlet", "--reload", "ecerp.wsgi"]
