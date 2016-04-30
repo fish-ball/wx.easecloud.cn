@@ -79,10 +79,10 @@ WSGI_APPLICATION = 'wxauth.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'wxauth_router',
-        'HOST': '127.0.0.1',
-        'USER': 'root',
-        'PASSWORD': 'root',
+        'NAME': 'django_wxauth',
+        'HOST': 'mysql',
+        'USER': 'django',
+        'PASSWORD': 'Easecloud2014',
     },
     'sqlite': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -128,6 +128,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 

@@ -49,10 +49,10 @@ def index(request):
     openid = data.get('openid')
     scope = data.get('scope')
 
-    wxuser = WechatUser.objects.get_or_create(openid=openid)
+    wxuser, create = WechatUser.objects.get_or_create(openid=openid)
 
     # 第三步：拉取用户信息
-    if 'snsapi_user_info' in scope:
+    if 'snsapi_userinfo' in scope:
 
         url = 'https://api.weixin.qq.com/sns/userinfo' \
               '?access_token=%s&openid=%s&lang=zh_CN' \
@@ -67,7 +67,7 @@ def index(request):
             )
 
         # 写入所有字段
-        for key, val in data:
+        for key, val in data.items():
             if hasattr(wxuser, key):
                 wxuser.__setattr__(key, val)
         wxuser.save()
