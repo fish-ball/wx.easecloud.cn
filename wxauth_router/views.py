@@ -70,6 +70,7 @@ def index(request):
         for key, val in data:
             if hasattr(wxuser, key):
                 wxuser.__setattr__(key, val)
+        wxuser.save()
 
     # 第四步：根据 state 值进行跳转
     # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
