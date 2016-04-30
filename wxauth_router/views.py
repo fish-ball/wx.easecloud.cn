@@ -67,7 +67,7 @@ def index(request):
             )
 
         # 写入所有字段
-        for key, val in data:
+        for key, val in data.items():
             if hasattr(wxuser, key):
                 wxuser.__setattr__(key, val)
         wxuser.save()
