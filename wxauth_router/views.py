@@ -81,10 +81,13 @@ def index(request):
             data.get('errmsg', '找不到对应的请求目标，请先注册')
         )
 
-    if '?' in target.url:
-        return redirect(target.url + '&openid=' + openid)
-    else:
-        return redirect(target.url + '?openid=' + openid)
+    return redirect(
+        target.url + '%sopenid=%s&state=%s' % (
+            '&' if '?' in target.url else '?',
+            openid,
+            state[8:]
+        )
+    )
 
 
 def user(request, openid):
