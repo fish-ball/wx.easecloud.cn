@@ -2,6 +2,7 @@ import json
 import time
 from urllib.request import urlopen
 
+from django.core.urlresolvers import reverse
 from django.shortcuts import render, redirect
 from django.http \
     import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
@@ -85,7 +86,7 @@ def index(request):
         return redirect(target.url + '?openid=' + openid)
 
 
-def user(openid):
+def user(request, openid):
     """
     提供查询接口，让客户拿到 openid 之后查询用户的信息
     :param openid:
@@ -98,3 +99,10 @@ def user(openid):
 
     from django.forms.models import model_to_dict
     return HttpResponse(json.dumps(model_to_dict(wxuser)))
+
+
+def preview(request):
+    """
+    redirect 到这个回调，可以预览结果
+    """
+    return redirect(reverse(user, kwargs={'openid': request.GET.get('openid')}))

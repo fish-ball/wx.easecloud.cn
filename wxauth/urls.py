@@ -21,5 +21,6 @@ import wxauth_router.views
 urlpatterns = [
     url(r'^$', wxauth_router.views.index),
     url(r'^user/(?P<openid>.+)/$', wxauth_router.views.user),
+    url(r'^preview/$', wxauth_router.views.preview),
     url(r'^admin/', admin.site.urls),
 ]
