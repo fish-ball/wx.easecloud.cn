@@ -105,6 +105,17 @@ class WechatUser(models.Model):
         verbose_name_plural = '微信用户'
         db_table = 'wxauth_wechat_user'
 
+    def __str__(self):
+        return self.nickname
+
+    def avatar_html_tag(self):
+        return r'<img src="%s" style="max-width: 48px; max-height: 48px;" />' \
+               % self.headimgurl \
+            if self.headimgurl else ''
+
+    avatar_html_tag.short_description = '头像'
+    avatar_html_tag.allow_tags = True
+
 
 class AuthLog(models.Model):
     """ 验证日志
