@@ -78,6 +78,7 @@ class WechatUser(models.Model):
     domain = models.ForeignKey(
         verbose_name='公众号域',
         to='WechatDomain',
+        related_name='users',
         null=True,
     )
 
@@ -162,7 +163,7 @@ class AuthLog(models.Model):
     target = models.ForeignKey(
         verbose_name='目标',
         to=RequestTarget,
-        null=True,
+        related_name='logs',
     )
 
     state = models.CharField(

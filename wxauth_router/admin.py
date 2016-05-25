@@ -22,8 +22,8 @@ class RequestTargetAdmin(admin.ModelAdmin):
 class WechatUserAdmin(admin.ModelAdmin):
 
     list_display = [
-        'openid', 'nickname', 'sex', 'province', 'city',
-        'avatar_html_tag',
+        'openid', 'avatar_html_tag',
+        'nickname', 'domain', 'sex', 'province', 'city',
     ]
 
 
