@@ -90,9 +90,9 @@ def index(request):
         )
 
     return redirect(
-        target.url + '%sopenid=%s&state=%s' % (
+        target.url + '%sticket=%s&state=%s' % (
             '&' if '?' in target.url else '?',
-            openid,
+            ResultTicket.make(wxuser).key,
             state[8:]
         )
     )
