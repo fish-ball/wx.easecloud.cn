@@ -25,15 +25,19 @@ def index(request):
     code = request.GET.get('code', '')
     state = request.GET.get('state', '')
 
-    appid = Option.get('appid', settings.WXAUTH_APPID)
-    appsecret = Option.get('appsecret', settings.WXAUTH_APPSECRET)
+    domain = WechatDomain.objects.filter(
+        domain=request.get_host(),
+    ).first()
+
+    if not domain:
+        return HttpResponse(status=404)
 
     # 第二步：换取网页授权 access_token 及 open_id
 
     url = 'https://api.weixin.qq.com/sns/oauth2/access_token' \
           '?appid=%s&secret=%s&code=%s' \
           '&grant_type=authorization_code' \
-          % (appid, appsecret, code)
+          % (domain.app_id, domain.app_secret, code)
 
     resp = urlopen(url)
     data = json.loads(resp.read().decode())
@@ -44,12 +48,15 @@ def index(request):
         )
 
     access_token = data.get('access_token')
-    expires_in = data.get('expires_in')
-    refresh_token = data.get('refresh_token')
+    # expires_in = data.get('expires_in')
+    # refresh_token = data.get('refresh_token')
     openid = data.get('openid')
     scope = data.get('scope')
 
-    wxuser, create = WechatUser.objects.get_or_create(openid=openid)
+    wxuser, created = WechatUser.objects.get_or_create(
+        openid=openid,
+        domain=domain,
+    )
 
     # 第三步：拉取用户信息
     if 'snsapi_userinfo' in scope:
@@ -70,6 +77,7 @@ def index(request):
         for key, val in data.items():
             if hasattr(wxuser, key):
                 wxuser.__setattr__(key, val)
+
         wxuser.save()
 
     # 第四步：根据 state 值进行跳转
@@ -90,23 +98,32 @@ def index(request):
     )
 
 
-def user(request, openid):
+# def user(request, openid):
+#     """ 提供查询接口，让客户拿到 openid 之后查询用户的信息
+#     """
+#     wxuser = WechatUser.objects.filter(openid=openid).first()
+#
+#     if not wxuser:
+#         return HttpResponseNotFound()
+#
+#     from django.forms.models import model_to_dict
+#     return HttpResponse(json.dumps(model_to_dict(wxuser)))
+
+
+def ticket(request, key):
+    """ 提供查询接口，让客户拿到 result key 之后查询用户的信息
     """
-    提供查询接口，让客户拿到 openid 之后查询用户的信息
-    :param openid:
-    :return:
-    """
-    wxuser = WechatUser.objects.filter(openid=openid).first()
+    wxuser = ResultTicket.fetch_user(key)
 
     if not wxuser:
-        return HttpResponseNotFound()
+        return HttpResponse(status=404)
 
     from django.forms.models import model_to_dict
     return HttpResponse(json.dumps(model_to_dict(wxuser)))
 
 
-def preview(request):
-    """
-    redirect 到这个回调，可以预览结果
-    """
-    return redirect(reverse(user, kwargs={'openid': request.GET.get('openid')}))
+# def preview(request):
+#     """
+#     redirect 到这个回调，可以预览结果
+#     """
+#     return redirect(reverse(user, kwargs={'openid': request.GET.get('openid')}))

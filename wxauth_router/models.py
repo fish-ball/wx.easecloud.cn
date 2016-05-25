@@ -28,13 +28,35 @@ class WechatDomain(models.Model):
         unique=True,
     )
 
+    app_secret = models.CharField(
+        verbose_name='公众号 APP_SECRET',
+        max_length=50,
+    )
+
+    # access_token = models.CharField(
+    #     verbose_name='Access Token',
+    #     max_length=255,
+    #     default='',
+    #     empty=True,
+    # )
+    #
+    # access_token_expire = models.IntegerField(
+    #     verbose_name='Access Token Expire',
+    #     default=0,
+    # )
+    #
+    # refresh_token = models.IntegerField(
+    #     verbose_name='Refresh Token',
+    #     default=0,
+    # )
+
     class Meta:
         verbose_name = '公众号域'
         verbose_name_plural = '公众号域'
         db_table = 'wxauth_wechat_domain'
 
     def __str__(self):
-        return self.title
+        return self.title + '(' + self.domain + ')'
 
 
 class RequestTarget(models.Model):
@@ -153,6 +175,47 @@ class WechatUser(models.Model):
 
     avatar_html_tag.short_description = '头像'
     avatar_html_tag.allow_tags = True
+
+
+class ResultTicket(models.Model):
+    """ 结果令牌
+    随机 hex
+    请求之后返回给客户，客户在超时之前可以获取一次用户的信息
+    """
+    key = models.CharField(
+        verbose_name='令牌值',
+        max_length=32,
+    )
+
+    user = models.ForeignKey(
+        verbose_name='用户',
+        to='WechatUser',
+        related_name='tickets',
+    )
+
+    expires = models.IntegerField(
+        verbose_name='超时时间',
+    )
+
+    class Meta:
+        verbose_name = '结果令牌'
+
+    @classmethod
+    def make(cls, user):
+        import time, uuid
+        return cls.objects.create(
+            key=uuid.uuid4().hex,
+            user=user,
+            expires=int(time.time()) + 60,  # 一分钟内有效
+        )
+
+    @classmethod
+    def fetch_user(cls, key):
+        # 删除所有超时的令牌
+        import time
+        cls.objects.filter(expires__lt=time.time()).delete()
+        ticket = cls.objects.filter(key=key).first()
+        return ticket and ticket.user
 
 
 class AuthLog(models.Model):
