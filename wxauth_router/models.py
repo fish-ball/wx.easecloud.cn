@@ -6,6 +6,37 @@ https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421140842&token=&lang=zh
 from django.db import models
 
 
+class WechatDomain(models.Model):
+    """ 微信公众号域 """
+
+    title = models.CharField(
+        verbose_name='标题',
+        max_length=150,
+        help_text='可以填写公众号的显示名称',
+    )
+
+    domain = models.CharField(
+        verbose_name='域名',
+        max_length=150,
+        help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息',
+        unique=True,
+    )
+
+    app_id = models.CharField(
+        verbose_name='公众号 APP_ID',
+        max_length=50,
+        unique=True,
+    )
+
+    class Meta:
+        verbose_name = '公众号域'
+        verbose_name_plural = '公众号域'
+        db_table = 'wxauth_wechat_domain'
+
+    def __str__(self):
+        return self.title
+
+
 class RequestTarget(models.Model):
     """ 请求目标
     每一个接受转发的回调都需要在这里注册一个 target
@@ -43,6 +74,12 @@ class WechatUser(models.Model):
     """ 微信用户
     所有验证用户的信息都会缓存在这个位置
     """
+
+    domain = models.ForeignKey(
+        verbose_name='公众号域',
+        to='WechatDomain',
+        null=True,
+    )
 
     openid = models.CharField(
         verbose_name='用户OpenID',
