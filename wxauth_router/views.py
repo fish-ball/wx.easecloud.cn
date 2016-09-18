@@ -84,12 +84,15 @@ def index(request):
 
         # 保存头像图
         from urllib.error import HTTPError
+        from django.core.files import File
+        from django.core.files.temp import NamedTemporaryFile
         try:
             resp = urlopen(data.get('headimgurl'))
+            img_temp = NamedTemporaryFile(delete=True)
+            img_temp.write(resp.read())
             wxuser.avatar.save(
                 name='avatar-%s.png' % wxuser.openid,
-                content=resp.read(),
-                save=True
+                content=File(img_temp),
             )
             wxuser.save()
         except HTTPError:
