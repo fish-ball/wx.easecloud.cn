@@ -149,6 +149,11 @@ class WechatUser(models.Model):
         null=True,
     )
 
+    avatar = models.ImageField(
+        verbose_name='头像文件',
+        null=True,
+    )
+
     privilege = models.TextField(
         verbose_name='用户特权信息',
         null=True,

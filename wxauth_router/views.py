@@ -32,8 +32,10 @@ def index(request):
     if not domain:
         return HttpResponse(status=404)
 
-    # 第二步：换取网页授权 access_token 及 open_id
+    if not code:
+        return redirect('/admin')
 
+    # 第二步：换取网页授权 access_token 及 open_id
     url = 'https://api.weixin.qq.com/sns/oauth2/access_token' \
           '?appid=%s&secret=%s&code=%s' \
           '&grant_type=authorization_code' \
@@ -79,6 +81,19 @@ def index(request):
                 wxuser.__setattr__(key, val)
 
         wxuser.save()
+
+        # 保存头像图
+        from urllib.error import HTTPError
+        try:
+            resp = urlopen(data.get('headimgurl'))
+            wxuser.avatar.save(
+                name='avatar-%s' % wxuser.id,
+                content=resp.read(),
+                save=True
+            )
+            wxuser.save()
+        except HTTPError:
+            pass
 
     # 第四步：根据 state 值进行跳转
     # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
