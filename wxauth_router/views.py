@@ -87,7 +87,7 @@ def index(request):
         try:
             resp = urlopen(data.get('headimgurl'))
             wxuser.avatar.save(
-                name='avatar-%s' % wxuser.id,
+                name='avatar-%s.png' % wxuser.openid,
                 content=resp.read(),
                 save=True
             )
