@@ -70,7 +70,8 @@ class RequestTarget(models.Model):
 
     url = models.URLField(
         verbose_name='目标URL',
-        unique=True,
+        # unique=True,
+        # max_length=180,
     )
 
     key = models.CharField(
