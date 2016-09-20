@@ -66,7 +66,7 @@ def index(request):
         print(ex, url)
         return HttpResponse(str(ex))
 
-    print(data)
+    # print(data)
 
     if not data.get('access_token'):
         return HttpResponseBadRequest(
@@ -100,41 +100,13 @@ def index(request):
                 data.get('errmsg', '获取 access token 失败')
             )
 
-        # 写入所有字段
-        for key, val in data.items():
-            if hasattr(wxuser, key):
-                wxuser.__setattr__(key, val)
-
-        wxuser.save()
-
-        # 保存头像图
-        from urllib.error import HTTPError
-        from django.core.files import File
-        from django.core.files.temp import NamedTemporaryFile
-        try:
-            resp = urlopen(data.get('headimgurl'))
-            image_data = resp.read()
-            temp_file = NamedTemporaryFile(delete=True)
-            temp_file.write(image_data)
-            # 如果头像的二进制更换了才进行更新
-            if not wxuser.avatar or wxuser.avatar.read() != image_data:
-                from datetime import datetime
-                timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-                wxuser.avatar.save(
-                    name='%s-%s.png' % (wxuser.openid, timestamp),
-                    content=File(temp_file),
-                )
-                wxuser.save()
-        except HTTPError:
-            # 出现错误的话删掉存放的头像链接
-            wxuser.avatar = None
-            wxuser.save()
+        wxuser.update_info(data)
 
     # 第四步：根据 state 值进行跳转
     # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
     target = RequestTarget.objects.filter(key=state[:8]).first()
 
-    print(target, target.url)
+    # print(target, target.url)
 
     if not target:
         return HttpResponseBadRequest(

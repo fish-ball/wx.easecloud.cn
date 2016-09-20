@@ -58,6 +58,10 @@ class WechatDomain(models.Model):
     def __str__(self):
         return self.title + '(' + self.domain + ')'
 
+    def get_wechat_client(self):
+        from wechatpy import WeChatClient
+        return WeChatClient(self.app_id, self.app_secret)
+
 
 class RequestTarget(models.Model):
     """ 请求目标
@@ -202,6 +206,48 @@ class WechatUser(models.Model):
 
     def timestamp(self):
         return self.date_updated.strftime('%Y-%m-%d %H:%M:%S')
+
+    def reload_info(self):
+        client = self.domain.get_wechat_client()
+        try:
+            data = client.user.get(self.openid)
+            if data.get('subscribe'):
+                self.update_info(data)
+        except Exception as ex:
+            print(ex)
+
+    def update_info(self, data):
+
+        # 写入所有字段
+        for key, val in data.items():
+            if hasattr(self, key):
+                self.__setattr__(key, val)
+
+        self.save()
+
+        # 保存头像图
+        from urllib.request import urlopen
+        from urllib.error import HTTPError
+        from django.core.files import File
+        from django.core.files.temp import NamedTemporaryFile
+        try:
+            resp = urlopen(data.get('headimgurl'))
+            image_data = resp.read()
+            temp_file = NamedTemporaryFile(delete=True)
+            temp_file.write(image_data)
+            # 如果头像的二进制更换了才进行更新
+            if not self.avatar or self.avatar.read() != image_data:
+                from datetime import datetime
+                timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                self.avatar.save(
+                    name='%s-%s.png' % (self.openid, timestamp),
+                    content=File(temp_file),
+                )
+                self.save()
+        except HTTPError:
+            # 出现错误的话删掉存放的头像链接
+            self.avatar = None
+            self.save()
 
 
 class ResultTicket(models.Model):

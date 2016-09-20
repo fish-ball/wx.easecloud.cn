@@ -3,3 +3,4 @@ mysqlclient
 wechatpy
 gunicorn
 pillow
+pycrypto
