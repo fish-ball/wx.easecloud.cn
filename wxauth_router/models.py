@@ -236,8 +236,13 @@ class WechatUser(models.Model):
             image_data = resp.read()
             temp_file = NamedTemporaryFile(delete=True)
             temp_file.write(image_data)
+            try:
+                avatar_data = self.avatar and self.avatar.read()
+            except FileNotFoundError:
+                avatar_data = self.avatar = None
+                self.save()
             # 如果头像的二进制更换了才进行更新
-            if not self.avatar or self.avatar.read() != image_data:
+            if avatar_data != image_data:
                 from datetime import datetime
                 timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
                 self.avatar.save(
