@@ -208,31 +208,14 @@ class WechatUser(models.Model):
     def timestamp(self):
         return self.date_updated.strftime('%Y-%m-%d %H:%M:%S')
 
-    def reload_info(self):
-        client = self.domain.get_wechat_client()
-        try:
-            data = client.user.get(self.openid)
-            if data.get('subscribe'):
-                self.update_info(data)
-        except Exception as ex:
-            print(ex)
+    def update_avatar(self, headimgurl):
 
-    def update_info(self, data):
-
-        # 写入所有字段
-        for key, val in data.items():
-            if hasattr(self, key):
-                self.__setattr__(key, val)
-
-        self.save()
-
-        # 保存头像图
         from urllib.request import urlopen
         from urllib.error import HTTPError
         from django.core.files import File
         from django.core.files.temp import NamedTemporaryFile
         try:
-            resp = urlopen(data.get('headimgurl'))
+            resp = urlopen(headimgurl)
             image_data = resp.read()
             temp_file = NamedTemporaryFile(delete=True)
             temp_file.write(image_data)
@@ -254,6 +237,29 @@ class WechatUser(models.Model):
             # 出现错误的话删掉存放的头像链接
             self.avatar = None
             self.save()
+
+    def reload_info(self):
+        client = self.domain.get_wechat_client()
+        try:
+            data = client.user.get(self.openid)
+            if data.get('subscribe'):
+                self.update_info(data)
+            elif not self.avatar:
+                self.update_avatar(self.headimgurl)
+        except Exception as ex:
+            print(ex)
+
+    def update_info(self, data):
+
+        # 写入所有字段
+        for key, val in data.items():
+            if hasattr(self, key):
+                self.__setattr__(key, val)
+
+        self.save()
+
+        # 保存头像图
+        self.update_avatar(data.get('headimgurl'))
 
 
 class ResultTicket(models.Model):
