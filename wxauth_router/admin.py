@@ -24,6 +24,7 @@ class WechatUserAdmin(admin.ModelAdmin):
     list_display = [
         'openid', 'avatar_html_tag',
         'nickname', 'domain', 'sex', 'province', 'city',
+        'timestamp',
     ]
 
 

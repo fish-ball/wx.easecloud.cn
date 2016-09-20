@@ -1,6 +1,8 @@
 import json
+import os.path
 import time
 from urllib.request import urlopen
+import urllib.error
 
 from django.core.urlresolvers import reverse
 from django.shortcuts import render, redirect
@@ -25,6 +27,8 @@ def index(request):
     code = request.GET.get('code', '')
     state = request.GET.get('state', '')
 
+    # print(code)
+
     domain = WechatDomain.objects.filter(
         domain=request.get_host(),
     ).first()
@@ -33,6 +37,20 @@ def index(request):
         return HttpResponse(status=404)
 
     if not code:
+        ua = request.META.get('HTTP_USER_AGENT')
+        # print(('MicroMessenger' in ua), ua)
+        # print(domain.domain, domain.title)
+        if 'MicroMessenger' in ua and domain:
+            return redirect(
+                'https://open.weixin.qq.com/connect/oauth2/authorize'
+                '?appid=%s&redirect_uri=%s'
+                '&response_type=code'
+                '&scope=snsapi_userinfo'
+                '&state=80873479#wechat_redirect' % (
+                    domain.app_id,
+                    'http%3a%2f%2f' + domain.domain,
+                )
+            )
         return redirect('/admin')
 
     # 第二步：换取网页授权 access_token 及 open_id
@@ -41,8 +59,14 @@ def index(request):
           '&grant_type=authorization_code' \
           % (domain.app_id, domain.app_secret, code)
 
-    resp = urlopen(url)
-    data = json.loads(resp.read().decode())
+    try:
+        resp = urlopen(url)
+        data = json.loads(resp.read().decode())
+    except Exception as ex:
+        print(ex, url)
+        return HttpResponse(str(ex))
+
+    print(data)
 
     if not data.get('access_token'):
         return HttpResponseBadRequest(
@@ -56,8 +80,9 @@ def index(request):
     scope = data.get('scope')
 
     wxuser, created = WechatUser.objects.get_or_create(
-        openid=openid,
-        domain=domain,
+        openid=openid, defaults=dict(
+            domain=domain
+        )
     )
 
     # 第三步：拉取用户信息
@@ -88,19 +113,28 @@ def index(request):
         from django.core.files.temp import NamedTemporaryFile
         try:
             resp = urlopen(data.get('headimgurl'))
-            img_temp = NamedTemporaryFile(delete=True)
-            img_temp.write(resp.read())
-            wxuser.avatar.save(
-                name='avatar-%s.png' % wxuser.openid,
-                content=File(img_temp),
-            )
-            wxuser.save()
+            image_data = resp.read()
+            temp_file = NamedTemporaryFile(delete=True)
+            temp_file.write(image_data)
+            # 如果头像的二进制更换了才进行更新
+            if not wxuser.avatar or wxuser.avatar.read() != image_data:
+                from datetime import datetime
+                timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                wxuser.avatar.save(
+                    name='%s-%s.png' % (wxuser.openid, timestamp),
+                    content=File(temp_file),
+                )
+                wxuser.save()
         except HTTPError:
-            pass
+            # 出现错误的话删掉存放的头像链接
+            wxuser.avatar = None
+            wxuser.save()
 
     # 第四步：根据 state 值进行跳转
     # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
     target = RequestTarget.objects.filter(key=state[:8]).first()
+
+    print(target, target.url)
 
     if not target:
         return HttpResponseBadRequest(
@@ -137,11 +171,21 @@ def ticket(request, key):
         return HttpResponse(status=404)
 
     from django.forms.models import model_to_dict
-    return HttpResponse(json.dumps(model_to_dict(wxuser)))
+    from urllib.parse import urljoin
+    result = model_to_dict(wxuser)
+
+    # 将头像的 url 串接上当前的 domain
+    avatar_url = urljoin(request.get_raw_uri(), wxuser.avatar_url())
+
+    result['avatar'] = avatar_url
+
+    return HttpResponse(json.dumps(result))
 
 
-# def preview(request):
-#     """
-#     redirect 到这个回调，可以预览结果
-#     """
-#     return redirect(reverse(user, kwargs={'openid': request.GET.get('openid')}))
+def preview(request):
+    """
+    redirect 到这个回调，可以预览结果
+    """
+    return redirect(reverse(
+        ticket, kwargs={'key': request.GET.get('ticket')}
+    ))

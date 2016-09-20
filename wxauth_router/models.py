@@ -152,6 +152,7 @@ class WechatUser(models.Model):
     avatar = models.ImageField(
         verbose_name='头像文件',
         null=True,
+        upload_to='avatar'
     )
 
     privilege = models.TextField(
@@ -165,21 +166,42 @@ class WechatUser(models.Model):
         null=True,
     )
 
+    date_created = models.DateTimeField(
+        verbose_name='创建日期',
+        auto_now_add=True,
+    )
+
+    date_updated = models.DateTimeField(
+        verbose_name='更新日期',
+        auto_now=True,
+    )
+
     class Meta:
         verbose_name = '微信用户'
         verbose_name_plural = '微信用户'
         db_table = 'wxauth_wechat_user'
+        ordering = ['-date_updated', '-pk']
 
     def __str__(self):
         return self.nickname
 
+    def avatar_url(self):
+        import os.path
+        from django.conf import settings
+        return os.path.join(settings.MEDIA_URL, self.avatar.url) \
+            if self.avatar else self.headimgurl
+
     def avatar_html_tag(self):
-        return r'<img src="%s" style="max-width: 48px; max-height: 48px;" />' \
-               % self.headimgurl \
-            if self.headimgurl else ''
+        return (
+            r'<img src="%s" style="max-width: 48px; max-height: 48px;" />'
+            % self.avatar_url()
+        ) if self.avatar_url() else ''
 
     avatar_html_tag.short_description = '头像'
     avatar_html_tag.allow_tags = True
+
+    def timestamp(self):
+        return self.date_updated.strftime('%Y-%m-%d %H:%M:%S')
 
 
 class ResultTicket(models.Model):
@@ -248,4 +270,3 @@ class AuthLog(models.Model):
         verbose_name = '验证日志'
         verbose_name_plural = '验证日志'
         db_table = 'wxauth_authlog'
-
