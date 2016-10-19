@@ -50,6 +50,13 @@ class WechatDomain(models.Model):
     #     default=0,
     # )
 
+    verify_key = models.CharField(
+        verbose_name='认证文件编码',
+        max_length=20,
+        blank=True,
+        default='',
+    )
+
     class Meta:
         verbose_name = '公众号域'
         verbose_name_plural = '公众号域'

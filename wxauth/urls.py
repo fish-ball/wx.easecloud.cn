@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^ticket/(?P<key>.+)/$', wxauth_router.views.ticket),
     # url(r'^user/(?P<key>.+)/$', wxauth_router.views.ticket),
     url(r'^preview/$', wxauth_router.views.preview),
+    url(r'^MP_verify_(?P<key>.+)\.txt$', wxauth_router.views.verify_key),
     url(r'^admin/', admin.site.urls),
 ]
 

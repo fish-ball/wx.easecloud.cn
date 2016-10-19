@@ -6,7 +6,7 @@ from .models import *
 class RequestTargetAdmin(admin.ModelAdmin):
 
     list_display = [
-        'id', 'title', 'domain', 'app_id',
+        'id', 'title', 'domain', 'app_id', 'verify_key',
     ]
 
 

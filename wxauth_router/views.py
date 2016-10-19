@@ -161,3 +161,16 @@ def preview(request):
     return redirect(reverse(
         ticket, kwargs={'key': request.GET.get('ticket')}
     ))
+
+
+def verify_key(request):
+    """
+    将文件 MP_verify_xxxxxxxxx 上传至填写域名或路径指向的 web 服务器
+    :param request:
+    :return:
+    """
+    domain = WechatDomain.objects.filter(
+        domain=request.get_host(),
+    ).first()
+
+    return HttpResponse(domain.verify_key)
