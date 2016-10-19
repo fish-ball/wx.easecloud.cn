@@ -163,7 +163,7 @@ def preview(request):
     ))
 
 
-def verify_key(request):
+def verify_key(request, key):
     """
     将文件 MP_verify_xxxxxxxxx 上传至填写域名或路径指向的 web 服务器
     :param request:
@@ -173,4 +173,6 @@ def verify_key(request):
         domain=request.get_host(),
     ).first()
 
-    return HttpResponse(domain.verify_key)
+    assert key and key == domain.verify_key, '验证码不正确'
+
+    return HttpResponse(key)
