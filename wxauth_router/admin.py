@@ -5,7 +5,7 @@ from .models import *
 @admin.register(WechatDomain)
 class RequestTargetAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'title', 'domain', 'app_id',
+        'id', 'title', 'domain', 'app_id', 'verify_key',
     ]
 
 

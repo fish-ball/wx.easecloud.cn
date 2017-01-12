@@ -163,6 +163,21 @@ def preview(request):
     ))
 
 
+def verify_key(request, key):
+    """
+    将文件 MP_verify_xxxxxxxxx 上传至填写域名或路径指向的 web 服务器
+    :param request:
+    :return:
+    """
+    domain = WechatDomain.objects.filter(
+        domain=request.get_host(),
+    ).first()
+
+    assert key and key == domain.verify_key, '验证码不正确'
+
+    return HttpResponse(key)
+
+
 def make_order(request, appid):
     from django.http import JsonResponse
     app = WechatApp.objects.get(app_id=appid)

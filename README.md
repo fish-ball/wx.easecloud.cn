@@ -110,19 +110,19 @@ $entrance_url =
     "&response_type=code".
     "&scope=snsapi_userinfo".
     "&state=1a2b3c4dfrom_login".
-    "#wechat_redirect":
+    "#wechat_redirect";
 
 // If visited in wechat, using the automatic login
 if(preg_match('/MicroMessenger/', $_SERVER['HTTP_USER_AGENT'])) {
-    $openid = @$_GET['openid'];
+    $ticket = @$_GET['ticket'];
     // You can do some judge based on the $state parameter;
     $state = @$_GET['state'];  // you got 'from_login' here.
-    if(!$openid) {
+    if(!$ticket) {
         header('Location: '.$entrance_url);
         exit;
     }
-    $user_info = json_decode(file_get_content(
-        "http://wx.easecloud.cn/user/$openid/",
+    $user_info = json_decode(file_get_contents(
+        "http://wx.easecloud.cn/ticket/$ticket/"
     ));
     // Implements your login/signup logic.
     login($user_info);
