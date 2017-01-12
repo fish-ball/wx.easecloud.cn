@@ -161,3 +161,15 @@ def preview(request):
     return redirect(reverse(
         ticket, kwargs={'key': request.GET.get('ticket')}
     ))
+
+
+def make_order(request, appid):
+    from django.http import JsonResponse
+    app = WechatApp.objects.get(app_id=appid)
+    return JsonResponse(app.make_order(
+        body=request.GET.get('body'),
+        total_fee=request.GET.get('total_fee'),
+        out_trade_no=request.GET.get('out_trade_no'),
+        user_id=request.GET.get('user_id'),
+        product_id=request.GET.get('product_id'),
+    ), safe=False)

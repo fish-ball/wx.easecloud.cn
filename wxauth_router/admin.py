@@ -4,7 +4,6 @@ from .models import *
 
 @admin.register(WechatDomain)
 class RequestTargetAdmin(admin.ModelAdmin):
-
     list_display = [
         'id', 'title', 'domain', 'app_id',
     ]
@@ -12,7 +11,6 @@ class RequestTargetAdmin(admin.ModelAdmin):
 
 @admin.register(RequestTarget)
 class RequestTargetAdmin(admin.ModelAdmin):
-
     list_display = [
         'id', 'url', 'key',
     ]
@@ -20,7 +18,6 @@ class RequestTargetAdmin(admin.ModelAdmin):
 
 @admin.register(WechatUser)
 class WechatUserAdmin(admin.ModelAdmin):
-
     list_display = [
         'openid', 'avatar_html_tag',
         'nickname', 'domain', 'sex', 'province', 'city',
@@ -28,5 +25,8 @@ class WechatUserAdmin(admin.ModelAdmin):
     ]
 
 
-
-
+@admin.register(WechatApp)
+class WechatAppAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'title', 'trade_type', 'app_id',
+    ]

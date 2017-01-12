@@ -3,7 +3,177 @@
 https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421140842&token=&lang=zh_CN
 """
 
+import os.path
 from django.db import models
+
+
+class WechatApp(models.Model):
+    title = models.CharField(
+        verbose_name='标题',
+        max_length=150,
+        help_text='可以填写公众号的显示名称',
+    )
+
+    app_id = models.CharField(
+        verbose_name='APP_ID',
+        max_length=50,
+        unique=True,
+    )
+
+    app_secret = models.CharField(
+        verbose_name='APP_SECRET',
+        max_length=50,
+    )
+
+    mch_id = models.CharField(
+        verbose_name='商户号 MCH ID',
+        max_length=50,
+    )
+
+    api_key = models.CharField(
+        verbose_name='API 密钥',
+        max_length=50,
+    )
+
+    apiclient_cert = models.TextField(
+        verbose_name='PEM 支付证书',
+    )
+
+    apiclient_key = models.TextField(
+        verbose_name='PEM 支付私钥',
+    )
+
+    notify_url = models.URLField(
+        verbose_name='异步回调URL',
+        blank=True,
+    )
+
+    TRADE_TYPE_JSAPI = 'JSAPI'
+    TRADE_TYPE_NATIVE = 'NATIVE'
+    TRADE_TYPE_APP = 'APP'
+    TRADE_TYPE_WAP = 'WAP'
+    TRADE_TYPE_CHOICES = (
+        (TRADE_TYPE_JSAPI, '公众号JSAPI'),
+        (TRADE_TYPE_NATIVE, '扫码支付'),
+        (TRADE_TYPE_APP, 'APP支付'),
+        (TRADE_TYPE_WAP, '网页WAP'),
+    )
+
+    trade_type = models.CharField(
+        verbose_name='支付方式',
+        choices=TRADE_TYPE_CHOICES,
+        max_length=20,
+    )
+
+    class Meta:
+        verbose_name = '微信APP'
+        verbose_name_plural = '微信APP'
+        db_table = 'wxauth_wechat_app'
+
+    def mch_cert(self):
+        from django.conf import settings
+        path = os.path.join(settings.MEDIA_ROOT, 'wechat/{}/pay/apiclient_cert.pem'.format(self.app_id))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        return path
+
+    def mch_key(self):
+        from django.conf import settings
+        path = os.path.join(settings.MEDIA_ROOT, 'wechat/{}/pay/apiclient_key.pem'.format(self.app_id))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        return path
+
+    def save(self, *args, **kwargs):
+        # 将商户证书写入文件
+        file_mch_cert = open(self.mch_cert(), 'w')
+        file_mch_cert.write(self.apiclient_cert)
+        file_mch_cert.close()
+        # 将商户私钥写入文件
+        file_mch_key = open(self.mch_key(), 'w')
+        file_mch_key.write(self.apiclient_key)
+        file_mch_key.close()
+        super().save(*args, **kwargs)
+
+    def wechat_pay(self):
+        from wechatpy import pay
+        return pay.WeChatPay(
+            appid=self.app_id,
+            api_key=self.api_key,
+            mch_id=self.mch_id,
+            mch_cert=self.mch_cert(),
+            mch_key=self.mch_key(),
+        )
+
+    def make_order(self, body, total_fee,
+                   out_trade_no=None, user_id=None, product_id=None):
+        """ 统一下单接口
+        :param body: 订单描述
+        :param total_fee: 金额，单位分
+        :param out_trade_no: 外部订单号，默认系统生成
+        :param user_id: 用户ID，JSAPI 必传（即付款用户的 open_id）
+        :param product_id: 商品ID，NATIVE 必传（自行定义）
+        :return:
+        """
+        from wechatpy import pay
+        assert self.trade_type != self.TRADE_TYPE_JSAPI or user_id, \
+            'JSAPI 调起下单必须提供 user_id'
+        assert self.trade_type != self.TRADE_TYPE_NATIVE or product_id, \
+            'NATIVE 调起下单必须提供 product_id'
+        wechat_order = pay.api.WeChatOrder(self.wechat_pay())
+        order_data = wechat_order.create(
+            trade_type=self.trade_type,
+            body=body,
+            total_fee=total_fee,
+            notify_url=self.notify_url,
+            user_id=user_id,
+            product_id=product_id,
+        )
+        print(order_data)
+        return order_data
+
+    def get_jsapi_params(self, prepay_id):
+        """ 返回 jsapi 的付款对象 """
+        import time
+        from wechatpy.pay import api
+        from wechatpy.utils import random_string, to_text
+        jsapi = api.WeChatJSAPI(self.wechat_pay())
+        return jsapi.get_jsapi_params(
+            prepay_id=prepay_id,
+            nonce_str=random_string(32),
+            timestamp=to_text(int(time.time())),
+        )
+
+        # def get_native_code_url(self, product_id):
+        #     """ 返回 NATIVE 支付调起的链接（可以做成二维码）
+        #     对应微信支付系统的模式二：
+        #     https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=6_5
+        #     :param product_id: 产品编号
+        #     """
+        #     import time
+        #     from wechatpy.utils import random_string, to_text
+        #     nonce_str = random_string(32)
+        #     timestamp = to_text(int(time.time()))
+        #
+        #     sign_data = {
+        #         'appid': self.app_id,
+        #         'mch_id': self.mch_id,
+        #         'time_stamp': timestamp,
+        #         'nonce_str': nonce_str,
+        #         'product_id': product_id
+        #     }
+        #     from hashlib import md5
+        #     signtemp = '&'.join(
+        #         ['{}={}'.format(*item) for item in sorted(sign_data.items())] +
+        #         ['&key=' + self.api_key]
+        #     )
+        #     sign = md5(signtemp.encode()).hexdigest().upper()
+        #
+        #     return 'weixin://wxpay/bizpayurl?' \
+        #            'sign=' + sign + \
+        #            '&appid=' + self.app_id + \
+        #            '&mch_id=' + self.mch_id + \
+        #            '&product_id=' + product_id + \
+        #            '&time_stamp=' + timestamp + \
+        #            '&nonce_str=' + nonce_str
 
 
 class WechatDomain(models.Model):
