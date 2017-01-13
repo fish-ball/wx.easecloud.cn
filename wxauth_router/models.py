@@ -127,8 +127,7 @@ class WechatApp(models.Model):
             user_id=user_id,
             product_id=product_id,
         )
-        print(order_data)
-        return order_data
+        return wechat_order.get_appapi_params(order_data['prepay_id'])
 
     def get_jsapi_params(self, prepay_id):
         """ 返回 jsapi 的付款对象 """
