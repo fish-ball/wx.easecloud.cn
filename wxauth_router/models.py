@@ -126,6 +126,7 @@ class WechatApp(models.Model):
             notify_url=self.notify_url,
             user_id=user_id,
             product_id=product_id,
+            out_trade_no=out_trade_no,
         )
         return wechat_order.get_appapi_params(order_data['prepay_id'])
 
