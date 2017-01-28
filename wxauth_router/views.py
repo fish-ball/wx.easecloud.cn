@@ -106,19 +106,19 @@ def index(request):
     # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
     target = RequestTarget.objects.filter(key=state[:8]).first()
 
-    # print(target, target.url)
-
-    # 找不到 target 的话用 session 值进行跳转
-    if not target:
-        target = request.session.get('redirect_uri')
-        request.session['redirect_uri'] = ''
-
     if target:
+        redirect_uri = target.url
+    else:
+        redirect_uri = request.session.get('redirect_uri')
+
+    params = state[8:] or request.session.get('wxauth_params') or ''
+
+    if redirect_uri:
         return redirect(
-            target.url + '%sticket=%s&state=%s' % (
-                '&' if '?' in target.url else '?',
+            redirect_uri + '%sticket=%s&state=%s' % (
+                '&' if '?' in redirect_uri else '?',
                 ResultTicket.make(wxuser).key,
-                state[8:]
+                params
             )
         )
 
@@ -196,13 +196,21 @@ def make_order(request, appid):
 
 
 def auth(request, appid):
-    redirect_uri = request.POST.get('redirect_uri')
-    redirect_uri = redirect_uri or request.GET.get('redirect_uri')
-    redirect_uri = redirect_uri or request.META.get('HTTP_REFERER')
+    # 记录传入的 redirect_uri
+    redirect_uri = \
+        request.POST.get('redirect_uri') \
+        or request.GET.get('redirect_uri') \
+        or request.META.get('HTTP_REFERER')
     assert redirect_uri, \
         '没有找到回调地址，请从 POST.redirect_uri，GET.redirect_uri，' \
         'HTTP_REFERER 中选一个传入'
     request.session['redirect_uri'] = redirect_uri
+
+    # 记录传入的 params
+    request.session['wxauth_params'] = \
+        request.POST.get('params') \
+        or request.GET.get('params')
+
     from urllib.parse import urljoin, quote_plus
     auth_uri = (
         'https://open.weixin.qq.com/connect/oauth2/authorize'
