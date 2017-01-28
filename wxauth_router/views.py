@@ -108,17 +108,22 @@ def index(request):
 
     # print(target, target.url)
 
+    # 找不到 target 的话用 session 值进行跳转
     if not target:
-        return HttpResponseBadRequest(
-            data.get('errmsg', '找不到对应的请求目标，请先注册')
+        target = request.session.get('redirect_uri')
+        request.session['redirect_uri'] = ''
+
+    if target:
+        return redirect(
+            target.url + '%sticket=%s&state=%s' % (
+                '&' if '?' in target.url else '?',
+                ResultTicket.make(wxuser).key,
+                state[8:]
+            )
         )
 
-    return redirect(
-        target.url + '%sticket=%s&state=%s' % (
-            '&' if '?' in target.url else '?',
-            ResultTicket.make(wxuser).key,
-            state[8:]
-        )
+    return HttpResponseBadRequest(
+        data.get('errmsg', '找不到对应的请求目标，请先注册')
     )
 
 
@@ -188,3 +193,26 @@ def make_order(request, appid):
         user_id=request.GET.get('user_id'),
         product_id=request.GET.get('product_id'),
     ), safe=False)
+
+
+def auth(request, appid):
+    redirect_uri = request.POST.get('redirect_uri')
+    redirect_uri = redirect_uri or request.GET.get('redirect_uri')
+    redirect_uri = redirect_uri or request.META.get('HTTP_REFERER')
+    assert redirect_uri, \
+        '没有找到回调地址，请从 POST.redirect_uri，GET.redirect_uri，' \
+        'HTTP_REFERER 中选一个传入'
+    request.session['redirect_uri'] = redirect_uri
+    from urllib.parse import urljoin, quote_plus
+    auth_uri = (
+        'https://open.weixin.qq.com/connect/oauth2/authorize'
+        '?appid={}'
+        '&redirect_uri={}'
+        '&response_type=code'
+        '&scope=snsapi_userinfo'
+        '&state=#wechat_redirect'
+    ).format(
+        appid,
+        quote_plus(urljoin(request.get_raw_uri(), reverse(index))),
+    )
+    return redirect(auth_uri)
