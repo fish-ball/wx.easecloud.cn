@@ -103,6 +103,8 @@ For example:
 http://wx.easecloud.cn/make_order/wx6426cb0a36327b31/?body=%E6%88%91%E4%BB%AC&total_fee=1&out_trade_no=SH2017011412042182
 ```
 
+---
+
 ### V1.0 Old API usage:
 
 Look into the *Entrance Link* below again:
@@ -126,7 +128,7 @@ Focus on the querystring params:
 5. **state:** *Request target* and parameters;
 6. **wechat_redirect:** Required, just use it;
 
-### Calling procedure
+##### Calling procedure (V1.0)
 
 For example, we want to retrieve the user info in our website, the following
 steps is require:
@@ -147,7 +149,7 @@ steps is require:
    source by the state parameter (the substring after the 8-byte token in your
    initial given state)
 
-### Detailed example
+##### Detailed example (V1.0)
 
 For example, if you have a php web page `http://example.com/login.php`, now you
 want the user automatically signup and login when opened in wechat.
