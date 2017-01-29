@@ -10,6 +10,17 @@ Minimal Example
 
 Open the link below in the WeChat browser:
 
+##### V2.0:
+
+**Entrance Link:** <http://wx.easecloud.cn/auth/wx579e43a4729b1764/?redirect_uri=/preview>
+
+Ignore the `redirect_uri` param will lead the page returning to `HTTP_REFERER`.
+
+And the returning querystring contains a `ticket=<ticket>` query param, you can fetch the user
+authenticated by requesting `http://wx.easecloud.cn/ticket/<ticket>/`.
+
+##### V1.0 (old api):
+
 **Entrance Link:** <https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx579e43a4729b1764&redirect_uri=http%3a%2f%2fwx.easecloud.cn&response_type=code&scope=snsapi_userinfo&state=ba0ab193#wechat_redirect>
 
 Principle
@@ -29,6 +40,70 @@ in wechat browser.
 
 Usage
 -----
+
+### V2.0 API:
+
+#### 1. Wechat Official Account OAuth
+
+Since V2.0 wxauth framework does not need to register a specific **REQUEST TARGET**,
+(but wx domain with both app_id and api_secret is still required).
+
+Instead, you only need to redirect to the view `http://wx.easecloud.cn/auth/<appid>`.
+
+You can specify the returning url by either:
+
++ POST params by key `request_uri`
++ or fallbacks to: GET query params by key `request_uri`
++ or fallbacks to: HTTP_REFERER to the origin url
+
+So it triggers the weixin oauth.
+
+Then, if authentication is success, it returns to that returning url, with two
+significant query params:
+
++ ticket: you can fetch the resulting user info(JSON format) by requesting
+  http://wx.easecloud.cn/ticket/<ticket>/
++ state: the params that you passed when requesting oauth(optional).
+
+> Note about the state params, you can pass an extra `params` by either POST or GET
+params in your origin redirection, e.g.: `http://wx.easecloud.cn/auth/<appid>/?params=goods_id%3D16`
+
+> Then you got the returning state as `goods_id=16` with the ticket.
+
+And you can get the user information by something like(JS example):
+
+```
+$.getJSON('http://wx.easecloud.cn/ticket/'+ticket).then(function(user_info) {
+    console.log(user_info);
+});
+```
+
+#### 2. Wechat Pay Uniform ordering
+
+This api calls the wechat uniform ordering(统一下单) API:
+
+Ref: <https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=9_1>
+
+First, you must create a Wechat APP order in the admin panel, which stores the
+`appid` and `appsecret`, `mch_id`, payment certificate strings,
+and both `notify_url` and `trade_type`(see on the docs above).
+
+Then, by requesting `http://wx.easecloud.cn/make_order/` with the following,
+GET query params, you got the uniform ordering uri:
+
++ body: the display name showed by the order.
++ total_fee: payment amount measured by RMB cent.
++ out_trade_no: a unique order number generated manually and matches with you background.
++ user_id: payment user openid (required on official account payment)
++ product_id: required on NATIVE payment mode
+
+For example:
+
+```
+http://wx.easecloud.cn/make_order/wx6426cb0a36327b31/?body=%E6%88%91%E4%BB%AC&total_fee=1&out_trade_no=SH2017011412042182
+```
+
+### V1.0 Old API usage:
 
 Look into the *Entrance Link* below again:
 
