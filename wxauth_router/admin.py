@@ -5,7 +5,7 @@ from . import models as m
 @admin.register(m.WechatApp)
 class WechatAppAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'title', 'trade_type', 'app_id',
+        'id', 'type', 'title', 'trade_type', 'app_id',
     ]
 
 
@@ -27,7 +27,7 @@ class RequestTargetAdmin(admin.ModelAdmin):
 class WechatUserAdmin(admin.ModelAdmin):
     list_display = [
         'openid', 'avatar_html_tag',
-        'nickname', 'domain', 'sex', 'province', 'city',
+        'nickname', 'app', 'domain', 'sex', 'province', 'city',
         'timestamp',
     ]
 
