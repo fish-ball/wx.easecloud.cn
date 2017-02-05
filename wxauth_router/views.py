@@ -183,4 +183,8 @@ def sns_user(request, appid, code):
     :return:
     """
     app = WechatApp.objects.get(app_id=appid)
-    return HttpResponse(json.dumps(app.get_sns_user(code).serialize()))
+    wxuser = app.get_sns_user(code)
+    return HttpResponse(
+        json.dumps(wxuser.serialize())
+        if wxuser else '获取用户信息失败，可能是 code 已失效'
+    )
