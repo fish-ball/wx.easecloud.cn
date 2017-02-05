@@ -29,24 +29,33 @@ class WechatApp(models.Model):
     mch_id = models.CharField(
         verbose_name='商户号 MCH ID',
         max_length=50,
+        blank=True,
+        default='',
     )
 
     api_key = models.CharField(
         verbose_name='API 密钥',
         max_length=50,
+        blank=True,
+        default='',
     )
 
     apiclient_cert = models.TextField(
         verbose_name='PEM 支付证书',
+        blank=True,
+        default='',
     )
 
     apiclient_key = models.TextField(
         verbose_name='PEM 支付私钥',
+        blank=True,
+        default='',
     )
 
     notify_url = models.URLField(
         verbose_name='异步回调URL',
         blank=True,
+        default='',
     )
 
     TRADE_TYPE_JSAPI = 'JSAPI'
