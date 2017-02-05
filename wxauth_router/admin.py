@@ -1,32 +1,11 @@
 from django.contrib import admin
-from .models import *
+from . import models as m
 
+for model_class in m.__dict__.values():
+    if model_class.__class__ == m.models.base.ModelBase \
+            and not model_class._meta.abstract:
+        try:
+            admin.site.register(model_class)
 
-@admin.register(WechatDomain)
-class RequestTargetAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'title', 'domain', 'app_id', 'verify_key',
-    ]
-
-
-@admin.register(RequestTarget)
-class RequestTargetAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'url', 'key',
-    ]
-
-
-@admin.register(WechatUser)
-class WechatUserAdmin(admin.ModelAdmin):
-    list_display = [
-        'openid', 'avatar_html_tag',
-        'nickname', 'domain', 'sex', 'province', 'city',
-        'timestamp',
-    ]
-
-
-@admin.register(WechatApp)
-class WechatAppAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'title', 'trade_type', 'app_id',
-    ]
+        except admin.sites.AlreadyRegistered as e:
+            print(e)
