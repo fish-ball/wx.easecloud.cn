@@ -75,6 +75,24 @@ class WechatApp(models.Model):
         max_length=20,
     )
 
+    TYPE_APP = 'APP'
+    TYPE_WEB = 'NATIVE'
+    TYPE_BIZ = 'BIZ'
+    TYPE_BIZPLUGIN = 'BIZPLUGIN'
+    TYPE_CHOICES = (
+        (TYPE_APP, '移动应用'),
+        (TYPE_WEB, '网站应用'),
+        (TYPE_BIZ, '公众账号'),
+        # (TYPE_BIZPLUGIN, '公众号第三方平台'),
+    )
+
+    type = models.CharField(
+        verbose_name='开放平台类型',
+        choices=TYPE_CHOICES,
+        max_length=20,
+        help_text='参照 http://open.weixin.qq.com 管理中心的应用类型'
+    )
+
     domain = models.CharField(
         verbose_name='公众号网页授权域名',
         max_length=100,
@@ -112,6 +130,13 @@ class WechatApp(models.Model):
         verbose_name = '微信APP'
         verbose_name_plural = '微信APP'
         db_table = 'wxauth_wechat_app'
+
+    def __str__(self):
+        return '[{}] {} {}'.format(
+            dict(self.TRADE_TYPE_CHOICES)[self.trade_type],
+            self.title,
+            self.domain,
+        )
 
     def mch_cert(self):
         from django.conf import settings
