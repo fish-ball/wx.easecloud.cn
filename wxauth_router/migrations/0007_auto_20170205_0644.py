@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='wechatapp',
             name='domain',
-            field=models.CharField(help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息', max_length=100, unique=True, verbose_name='公众号网页授权域名'),
+            field=models.CharField(help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息', max_length=100, verbose_name='公众号网页授权域名'),
         ),
         migrations.AlterField(
             model_name='wechatdomain',

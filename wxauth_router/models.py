@@ -70,7 +70,9 @@ class WechatApp(models.Model):
         verbose_name='公众号网页授权域名',
         max_length=100,
         help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息',
-        unique=True,
+        # unique=True,
+        blank=True,
+        null=True,
     )
 
     # access_token = models.CharField(
