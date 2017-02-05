@@ -9,11 +9,11 @@ class WechatAppAdmin(admin.ModelAdmin):
     ]
 
 
-@admin.register(m.WechatDomain)
-class RequestTargetAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'title', 'domain', 'app_id', 'verify_key',
-    ]
+# @admin.register(m.WechatDomain)
+# class RequestTargetAdmin(admin.ModelAdmin):
+#     list_display = [
+#         'id', 'title', 'domain', 'app_id', 'verify_key',
+#     ]
 
 
 @admin.register(m.RequestTarget)
@@ -27,7 +27,7 @@ class RequestTargetAdmin(admin.ModelAdmin):
 class WechatUserAdmin(admin.ModelAdmin):
     list_display = [
         'openid', 'avatar_html_tag',
-        'nickname', 'app', 'domain', 'sex', 'province', 'city',
+        'nickname', 'app', 'sex', 'province', 'city',
         'timestamp',
     ]
 

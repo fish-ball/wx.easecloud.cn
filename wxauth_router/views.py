@@ -29,78 +29,80 @@ def index(request):
 
     # print(code)
 
-    domain = WechatDomain.objects.filter(
+    app = WechatApp.objects.filter(
         domain=request.get_host(),
     ).first()
 
-    if not domain:
+    if not app:
         return HttpResponse(status=404)
 
     if not code:
         ua = request.META.get('HTTP_USER_AGENT')
         # print(('MicroMessenger' in ua), ua)
         # print(domain.domain, domain.title)
-        if 'MicroMessenger' in ua and domain:
+        if 'MicroMessenger' in ua and app:
             return redirect(
                 'https://open.weixin.qq.com/connect/oauth2/authorize'
                 '?appid=%s&redirect_uri=%s'
                 '&response_type=code'
                 '&scope=snsapi_userinfo'
-                '&state=80873479#wechat_redirect' % (
-                    domain.app_id,
-                    'http%3a%2f%2f' + domain.domain,
+                '&state=#wechat_redirect' % (
+                    app.app_id,
+                    'http%3a%2f%2f' + app.domain,
                 )
             )
         return redirect('/admin')
 
-    # 第二步：换取网页授权 access_token 及 open_id
-    url = 'https://api.weixin.qq.com/sns/oauth2/access_token' \
-          '?appid=%s&secret=%s&code=%s' \
-          '&grant_type=authorization_code' \
-          % (domain.app_id, domain.app_secret, code)
+    # # 第二步：换取网页授权 access_token 及 open_id
+    # url = 'https://api.weixin.qq.com/sns/oauth2/access_token' \
+    #       '?appid=%s&secret=%s&code=%s' \
+    #       '&grant_type=authorization_code' \
+    #       % (app.app_id, app.app_secret, code)
+    #
+    # try:
+    #     resp = urlopen(url)
+    #     data = json.loads(resp.read().decode())
+    # except Exception as ex:
+    #     print(ex, url)
+    #     return HttpResponse(str(ex))
+    #
+    # # print(data)
+    #
+    # if not data.get('access_token'):
+    #     return HttpResponseBadRequest(
+    #         data.get('errmsg', '获取 access token 失败')
+    #     )
+    #
+    # access_token = data.get('access_token')
+    # # expires_in = data.get('expires_in')
+    # # refresh_token = data.get('refresh_token')
+    # openid = data.get('openid')
+    # scope = data.get('scope')
+    #
+    # wxuser, created = WechatUser.objects.get_or_create(
+    #     openid=openid, defaults=dict(app=app)
+    # )
+    #
+    # # 第三步：拉取用户信息
+    # if 'snsapi_userinfo' in scope:
+    #
+    #     url = 'https://api.weixin.qq.com/sns/userinfo' \
+    #           '?access_token=%s&openid=%s&lang=zh_CN' \
+    #           % (access_token, openid)
+    #
+    #     resp = urlopen(url)
+    #     data = json.loads(resp.read().decode())
+    #
+    #     if not data.get('openid'):
+    #         return HttpResponseBadRequest(
+    #             data.get('errmsg', '获取 access token 失败')
+    #         )
+    #
+    #     wxuser.update_info(data)
 
-    try:
-        resp = urlopen(url)
-        data = json.loads(resp.read().decode())
-    except Exception as ex:
-        print(ex, url)
-        return HttpResponse(str(ex))
-
-    # print(data)
-
-    if not data.get('access_token'):
-        return HttpResponseBadRequest(
-            data.get('errmsg', '获取 access token 失败')
-        )
-
-    access_token = data.get('access_token')
-    # expires_in = data.get('expires_in')
-    # refresh_token = data.get('refresh_token')
-    openid = data.get('openid')
-    scope = data.get('scope')
-
-    wxuser, created = WechatUser.objects.get_or_create(
-        openid=openid, defaults=dict(
-            domain=domain
-        )
-    )
-
-    # 第三步：拉取用户信息
-    if 'snsapi_userinfo' in scope:
-
-        url = 'https://api.weixin.qq.com/sns/userinfo' \
-              '?access_token=%s&openid=%s&lang=zh_CN' \
-              % (access_token, openid)
-
-        resp = urlopen(url)
-        data = json.loads(resp.read().decode())
-
-        if not data.get('openid'):
-            return HttpResponseBadRequest(
-                data.get('errmsg', '获取 access token 失败')
-            )
-
-        wxuser.update_info(data)
+    wxuser = app.get_sns_user(code)
+    if not wxuser:
+        return HttpResponseBadRequest('获取用户信息失败，详细错误信息请查看错误日志')
 
     # 第四步：根据 state 值进行跳转
     # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
@@ -109,8 +111,10 @@ def index(request):
     if target:
         redirect_uri = target.url
     else:
+        # 如果没有指定，采用跳转前写入 session 的 redirect_uri
         redirect_uri = request.session.get('redirect_uri')
 
+    # 截取后段传递的参数
     params = state[8:] or request.session.get('wxauth_params') or ''
 
     if redirect_uri:
@@ -122,9 +126,7 @@ def index(request):
             )
         )
 
-    return HttpResponseBadRequest(
-        data.get('errmsg', '找不到对应的请求目标，请先注册')
-    )
+    return HttpResponseBadRequest('验证回跳地址没有指定')
 
 
 # def user(request, openid):
@@ -174,12 +176,8 @@ def verify_key(request, key):
     :param request:
     :return:
     """
-    domain = WechatDomain.objects.filter(
-        domain=request.get_host(),
-    ).first()
-
-    assert key and key == domain.verify_key, '验证码不正确'
-
+    app = WechatApp.objects.filter(domain=request.get_host()).first()
+    assert key and key == app.verify_key, '验证码不正确'
     return HttpResponse(key)
 
 

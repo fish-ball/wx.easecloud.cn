@@ -133,7 +133,7 @@ class WechatApp(models.Model):
 
     def __str__(self):
         return '[{}] {} {}'.format(
-            dict(self.TRADE_TYPE_CHOICES)[self.trade_type],
+            dict(self.TYPE_CHOICES)[self.type],
             self.title,
             self.domain,
         )
@@ -252,6 +252,7 @@ class WechatApp(models.Model):
               % (self.app_id, self.app_secret, code)
 
         try:
+
             from urllib.request import urlopen
             resp = urlopen(url)
             data = json.loads(resp.read().decode())
@@ -268,7 +269,6 @@ class WechatApp(models.Model):
 
             # 第三步：拉取用户信息
             if 'snsapi_userinfo' in scope:
-
                 url = 'https://api.weixin.qq.com/sns/userinfo' \
                       '?access_token=%s&openid=%s&lang=zh_CN' \
                       % (access_token, openid)
@@ -283,74 +283,80 @@ class WechatApp(models.Model):
             return wxuser
 
         except Exception as ex:
+
+            # 跳过错误并且返回 None (输出到错误流)
             import traceback
             from sys import stderr
             print(traceback.format_exc(), file=stderr)
             return None
 
-
-class WechatDomain(models.Model):
-    """ 微信公众号域 """
-
-    app_id = models.CharField(
-        verbose_name='APP_ID',
-        max_length=50,
-        unique=True,
-    )
-
-    app_secret = models.CharField(
-        verbose_name='APP_SECRET',
-        max_length=50,
-    )
-
-    title = models.CharField(
-        verbose_name='标题',
-        max_length=150,
-        help_text='可以填写公众号的显示名称',
-    )
-
-    domain = models.CharField(
-        verbose_name='域名',
-        max_length=100,
-        help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息',
-        # unique=True,
-    )
-
-    # access_token = models.CharField(
-    #     verbose_name='Access Token',
-    #     max_length=255,
-    #     default='',
-    #     empty=True,
-    # )
-    #
-    # access_token_expire = models.IntegerField(
-    #     verbose_name='Access Token Expire',
-    #     default=0,
-    # )
-    #
-    # refresh_token = models.IntegerField(
-    #     verbose_name='Refresh Token',
-    #     default=0,
-    # )
-
-    verify_key = models.CharField(
-        verbose_name='认证文件编码',
-        max_length=20,
-        blank=True,
-        default='',
-    )
-
-    class Meta:
-        verbose_name = '公众号域'
-        verbose_name_plural = '公众号域'
-        db_table = 'wxauth_wechat_domain'
-
-    def __str__(self):
-        return self.title + '(' + self.domain + ')'
-
     def get_wechat_client(self):
         from wechatpy import WeChatClient
         return WeChatClient(self.app_id, self.app_secret)
+
+
+# class WechatDomain(models.Model):
+#     """ 微信公众号域 """
+#
+#     app_id = models.CharField(
+#         verbose_name='APP_ID',
+#         max_length=50,
+#         unique=True,
+#     )
+#
+#     app_secret = models.CharField(
+#         verbose_name='APP_SECRET',
+#         max_length=50,
+#     )
+#
+#     title = models.CharField(
+#         verbose_name='标题',
+#         max_length=150,
+#         help_text='可以填写公众号的显示名称',
+#     )
+#
+#     domain = models.CharField(
+#         verbose_name='域名',
+#         max_length=100,
+#         help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息',
+#         # unique=True,
+#     )
+#
+#     # access_token = models.CharField(
+#     #     verbose_name='Access Token',
+#     #     max_length=255,
+#     #     default='',
+#     #     empty=True,
+#     # )
+#     #
+#     # access_token_expire = models.IntegerField(
+#     #     verbose_name='Access Token Expire',
+#     #     default=0,
+#     # )
+#     #
+#     # refresh_token = models.IntegerField(
+#     #     verbose_name='Refresh Token',
+#     #     default=0,
+#     # )
+#
+#     verify_key = models.CharField(
+#         verbose_name='认证文件编码',
+#         max_length=20,
+#         blank=True,
+#         default='',
+#     )
+#
+#     class Meta:
+#         verbose_name = '公众号域'
+#         verbose_name_plural = '公众号域'
+#         db_table = 'wxauth_wechat_domain'
+#
+#     def __str__(self):
+#         return self.title + '(' + self.domain + ')'
+#
+#     def get_wechat_client(self):
+#         from wechatpy import WeChatClient
+#         return WeChatClient(self.app_id, self.app_secret)
 
 
 class RequestTarget(models.Model):
@@ -399,12 +405,12 @@ class WechatUser(models.Model):
         null=True,
     )
 
-    domain = models.ForeignKey(
-        verbose_name='公众号域',
-        to='WechatDomain',
-        related_name='users',
-        null=True,
-    )
+    # domain = models.ForeignKey(
+    #     verbose_name='公众号域',
+    #     to='WechatDomain',
+    #     related_name='users',
+    #     null=True,
+    # )
 
     openid = models.CharField(
         verbose_name='用户OpenID',
@@ -536,7 +542,7 @@ class WechatUser(models.Model):
             self.save()
 
     def reload_info(self):
-        client = self.domain.get_wechat_client()
+        client = self.app.get_wechat_client()
         try:
             data = client.user.get(self.openid)
             if data.get('subscribe'):
