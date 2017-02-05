@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='wechatapp',
             name='domain',
-            field=models.CharField(default=None, help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息', max_length=100, unique=True, verbose_name='公众号网页授权域名'),
+            field=models.CharField(default=None, help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息', max_length=100, verbose_name='公众号网页授权域名'),
             preserve_default=False,
         ),
         migrations.AddField(

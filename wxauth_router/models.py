@@ -12,7 +12,7 @@ class WechatApp(models.Model):
     app_id = models.CharField(
         verbose_name='APP_ID',
         max_length=50,
-        unique=True,
+        # unique=True,
     )
 
     app_secret = models.CharField(
@@ -277,7 +277,7 @@ class WechatDomain(models.Model):
         verbose_name='域名',
         max_length=100,
         help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息',
-        unique=True,
+        # unique=True,
     )
 
     # access_token = models.CharField(
