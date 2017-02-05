@@ -527,9 +527,11 @@ class WechatUser(models.Model):
     def serialize(self):
         from django.forms.models import model_to_dict
         from urllib.parse import urljoin
+        from .middleware import get_request
+        request = get_request()
         result = model_to_dict(self)
         # 将头像的 url 串接上当前的 domain
-        avatar_url = urljoin(self.get_raw_uri(), self.avatar_url())
+        avatar_url = urljoin(request and request.get_raw_uri() or 'http://wx.easecloud.cn', self.avatar_url())
         result['avatar'] = avatar_url
         return result
 
