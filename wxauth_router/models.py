@@ -93,6 +93,9 @@ class WechatApp(models.Model):
         help_text='参照 http://open.weixin.qq.com 管理中心的应用类型'
     )
 
+    ##########################
+    # 以下为微信公众号特有字段
+
     domain = models.CharField(
         verbose_name='公众号网页授权域名',
         max_length=100,
@@ -100,6 +103,41 @@ class WechatApp(models.Model):
         # unique=True,
         blank=True,
         null=True,
+    )
+
+    verify_key = models.CharField(
+        verbose_name='公众平台认证文件编码',
+        max_length=20,
+        blank=True,
+        default='',
+    )
+
+    biz_account = models.CharField(
+        verbose_name='公众平台微信号',
+        max_length=20,
+        blank=True,
+        default='',
+    )
+
+    biz_origin = models.CharField(
+        verbose_name='公众平台原始ID',
+        max_length=20,
+        blank=True,
+        default='',
+    )
+
+    biz_token =models.CharField(
+        verbose_name='公众平台接口令牌',
+        max_length=20,
+        blank=True,
+        default='',
+    )
+
+    biz_aes_key = models.CharField(
+        verbose_name='公众平台AES密钥',
+        max_length=100,
+        blank=True,
+        default='',
     )
 
     # access_token = models.CharField(
@@ -118,13 +156,6 @@ class WechatApp(models.Model):
     #     verbose_name='Refresh Token',
     #     default=0,
     # )
-
-    verify_key = models.CharField(
-        verbose_name='认证文件编码',
-        max_length=20,
-        blank=True,
-        default='',
-    )
 
     class Meta:
         verbose_name = '微信APP'
@@ -492,6 +523,15 @@ class WechatUser(models.Model):
 
     def __str__(self):
         return self.nickname
+
+    def serialize(self):
+        from django.forms.models import model_to_dict
+        from urllib.parse import urljoin
+        result = model_to_dict(self)
+        # 将头像的 url 串接上当前的 domain
+        avatar_url = urljoin(self.get_raw_uri(), self.avatar_url())
+        result['avatar'] = avatar_url
+        return result
 
     def avatar_url(self):
         import os.path

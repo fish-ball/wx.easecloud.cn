@@ -23,6 +23,7 @@ import wxauth_router.views
 urlpatterns = [
     url(r'^$', wxauth_router.views.index),
     url(r'^make_order/(?P<appid>.+)/$', wxauth_router.views.make_order),
+    url(r'^sns_user/(?P<appid>.+)/(?P<code>.+)/$', wxauth_router.views.sns_user),
     url(r'^auth/(?P<appid>.+)/$', wxauth_router.views.auth),
     url(r'^ticket/(?P<key>.+)/$', wxauth_router.views.ticket),
     # url(r'^user/(?P<key>.+)/$', wxauth_router.views.ticket),

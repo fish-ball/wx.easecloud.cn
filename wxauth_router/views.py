@@ -53,53 +53,6 @@ def index(request):
             )
         return redirect('/admin')
 
-    # # 第二步：换取网页授权 access_token 及 open_id
-    # url = 'https://api.weixin.qq.com/sns/oauth2/access_token' \
-    #       '?appid=%s&secret=%s&code=%s' \
-    #       '&grant_type=authorization_code' \
-    #       % (app.app_id, app.app_secret, code)
-    #
-    # try:
-    #     resp = urlopen(url)
-    #     data = json.loads(resp.read().decode())
-    # except Exception as ex:
-    #     print(ex, url)
-    #     return HttpResponse(str(ex))
-    #
-    # # print(data)
-    #
-    # if not data.get('access_token'):
-    #     return HttpResponseBadRequest(
-    #         data.get('errmsg', '获取 access token 失败')
-    #     )
-    #
-    # access_token = data.get('access_token')
-    # # expires_in = data.get('expires_in')
-    # # refresh_token = data.get('refresh_token')
-    # openid = data.get('openid')
-    # scope = data.get('scope')
-    #
-    # wxuser, created = WechatUser.objects.get_or_create(
-    #     openid=openid, defaults=dict(app=app)
-    # )
-    #
-    # # 第三步：拉取用户信息
-    # if 'snsapi_userinfo' in scope:
-    #
-    #     url = 'https://api.weixin.qq.com/sns/userinfo' \
-    #           '?access_token=%s&openid=%s&lang=zh_CN' \
-    #           % (access_token, openid)
-    #
-    #     resp = urlopen(url)
-    #     data = json.loads(resp.read().decode())
-    #
-    #     if not data.get('openid'):
-    #         return HttpResponseBadRequest(
-    #             data.get('errmsg', '获取 access token 失败')
-    #         )
-    #
-    #     wxuser.update_info(data)
-
     wxuser = app.get_sns_user(code)
     if not wxuser:
         return HttpResponseBadRequest('获取用户信息失败，详细错误信息请查看错误日志')
@@ -149,16 +102,7 @@ def ticket(request, key):
     if not wxuser:
         return HttpResponse(status=404)
 
-    from django.forms.models import model_to_dict
-    from urllib.parse import urljoin
-    result = model_to_dict(wxuser)
-
-    # 将头像的 url 串接上当前的 domain
-    avatar_url = urljoin(request.get_raw_uri(), wxuser.avatar_url())
-
-    result['avatar'] = avatar_url
-
-    return HttpResponse(json.dumps(result))
+    return HttpResponse(json.dumps(wxuser.serialize()))
 
 
 def preview(request):
@@ -194,6 +138,12 @@ def make_order(request, appid):
 
 
 def auth(request, appid):
+    """
+    直接带 appid 跳转到本 view 可以引导至微信公众号 OAuth 验证
+    :param request:
+    :param appid:
+    :return:
+    """
     # 记录传入的 redirect_uri
     redirect_uri = \
         request.POST.get('redirect_uri') \
@@ -222,3 +172,15 @@ def auth(request, appid):
         quote_plus(urljoin(request.get_raw_uri(), reverse(index))),
     )
     return redirect(auth_uri)
+
+
+def sns_user(request, appid, code):
+    """
+    根据 OAuth 接口请求回来的 code 获取用的信息
+    :param request:
+    :param appid:
+    :param code:
+    :return:
+    """
+    app = WechatApp.objects.get(app_id=appid)
+    return HttpResponse(json.dumps(app.get_sns_user(code).serialize()))
