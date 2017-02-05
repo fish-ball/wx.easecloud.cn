@@ -3,17 +3,12 @@
 https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421140842&token=&lang=zh_CN
 """
 
+import json
 import os.path
 from django.db import models
 
 
 class WechatApp(models.Model):
-    title = models.CharField(
-        verbose_name='标题',
-        max_length=150,
-        help_text='可以填写公众号的显示名称',
-    )
-
     app_id = models.CharField(
         verbose_name='APP_ID',
         max_length=50,
@@ -23,6 +18,12 @@ class WechatApp(models.Model):
     app_secret = models.CharField(
         verbose_name='APP_SECRET',
         max_length=50,
+    )
+
+    title = models.CharField(
+        verbose_name='标题',
+        max_length=150,
+        help_text='可以填写公众号的显示名称',
     )
 
     mch_id = models.CharField(
@@ -63,6 +64,37 @@ class WechatApp(models.Model):
         verbose_name='支付方式',
         choices=TRADE_TYPE_CHOICES,
         max_length=20,
+    )
+
+    domain = models.CharField(
+        verbose_name='公众号网页授权域名',
+        max_length=100,
+        help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息',
+        unique=True,
+    )
+
+    # access_token = models.CharField(
+    #     verbose_name='Access Token',
+    #     max_length=255,
+    #     default='',
+    #     empty=True,
+    # )
+    #
+    # access_token_expire = models.IntegerField(
+    #     verbose_name='Access Token Expire',
+    #     default=0,
+    # )
+    #
+    # refresh_token = models.IntegerField(
+    #     verbose_name='Refresh Token',
+    #     default=0,
+    # )
+
+    verify_key = models.CharField(
+        verbose_name='认证文件编码',
+        max_length=20,
+        blank=True,
+        default='',
     )
 
     class Meta:
@@ -175,9 +207,65 @@ class WechatApp(models.Model):
         #            '&time_stamp=' + timestamp + \
         #            '&nonce_str=' + nonce_str
 
+    def get_sns_user(self, code):
+
+        # 换取网页授权 access_token 及 open_id
+        url = 'https://api.weixin.qq.com/sns/oauth2/access_token' \
+              '?appid=%s&secret=%s&code=%s' \
+              '&grant_type=authorization_code' \
+              % (self.app_id, self.app_secret, code)
+
+        try:
+            from urllib.request import urlopen
+            resp = urlopen(url)
+            data = json.loads(resp.read().decode())
+            assert data.get('access_token'), '获取 access token 失败'
+            access_token = data.get('access_token')
+            # expires_in = data.get('expires_in')
+            # refresh_token = data.get('refresh_token')
+            openid = data.get('openid')
+            scope = data.get('scope')
+
+            wxuser, created = WechatUser.objects.get_or_create(
+                openid=openid, defaults=dict(app=self)
+            )
+
+            # 第三步：拉取用户信息
+            if 'snsapi_userinfo' in scope:
+
+                url = 'https://api.weixin.qq.com/sns/userinfo' \
+                      '?access_token=%s&openid=%s&lang=zh_CN' \
+                      % (access_token, openid)
+
+                resp = urlopen(url)
+                data = json.loads(resp.read().decode())
+
+                assert data.get('openid'), data.get('errmsg', '获取 access token 失败')
+
+                wxuser.update_info(data)
+
+            return wxuser
+
+        except Exception as ex:
+            import traceback
+            from sys import stderr
+            print(traceback.format_exc(), file=stderr)
+            return None
+
 
 class WechatDomain(models.Model):
     """ 微信公众号域 """
+
+    app_id = models.CharField(
+        verbose_name='APP_ID',
+        max_length=50,
+        unique=True,
+    )
+
+    app_secret = models.CharField(
+        verbose_name='APP_SECRET',
+        max_length=50,
+    )
 
     title = models.CharField(
         verbose_name='标题',
@@ -190,17 +278,6 @@ class WechatDomain(models.Model):
         max_length=100,
         help_text='公众号 > 开发 > 接口权限 > 网页授权获取用户基本信息',
         unique=True,
-    )
-
-    app_id = models.CharField(
-        verbose_name='公众号 APP_ID',
-        max_length=50,
-        unique=True,
-    )
-
-    app_secret = models.CharField(
-        verbose_name='公众号 APP_SECRET',
-        max_length=50,
     )
 
     # access_token = models.CharField(
@@ -278,6 +355,13 @@ class WechatUser(models.Model):
     """ 微信用户
     所有验证用户的信息都会缓存在这个位置
     """
+
+    app = models.ForeignKey(
+        verbose_name='微信APP',
+        to='WechatApp',
+        related_name='users',
+        null=True,
+    )
 
     domain = models.ForeignKey(
         verbose_name='公众号域',
