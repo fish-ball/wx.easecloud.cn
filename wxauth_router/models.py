@@ -164,7 +164,7 @@ class WechatApp(models.Model):
 
     def __str__(self):
         return '[{}] {} {}'.format(
-            dict(self.TYPE_CHOICES)[self.type],
+            dict(self.TYPE_CHOICES).get(self.type),
             self.title,
             self.domain,
         )
