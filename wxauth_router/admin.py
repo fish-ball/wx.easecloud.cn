@@ -2,6 +2,13 @@ from django.contrib import admin
 from . import models as m
 
 
+@admin.register(m.AlipayApp)
+class AlipayAppAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'title', 'app_id',
+    ]
+
+
 @admin.register(m.WechatApp)
 class WechatAppAdmin(admin.ModelAdmin):
     list_display = [

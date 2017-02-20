@@ -127,14 +127,42 @@ def verify_key(request, key):
 
 def make_order(request, appid):
     from django.http import JsonResponse
-    app = WechatApp.objects.get(app_id=appid)
-    return JsonResponse(app.make_order(
-        body=request.GET.get('body'),
-        total_fee=request.GET.get('total_fee'),
-        out_trade_no=request.GET.get('out_trade_no'),
-        user_id=request.GET.get('user_id'),
-        product_id=request.GET.get('product_id'),
-    ), safe=False)
+    app = WechatApp.objects.filter(app_id=appid).first()
+    if app:
+        return JsonResponse(app.make_order(
+            body=request.GET.get('body'),
+            total_fee=request.GET.get('total_fee'),
+            out_trade_no=request.GET.get('out_trade_no'),
+            user_id=request.GET.get('user_id'),
+            product_id=request.GET.get('product_id'),
+        ), safe=False)
+    app = AlipayApp.objects.filter(app_id=appid).first()
+    if app:
+        return HttpResponse(app.make_order_wap(
+            subject=request.GET.get('subject'),
+            out_trade_no=request.GET.get('out_trade_no'),
+            total_amount=request.GET.get('total_amount'),
+            body=request.GET.get('body', ''),
+        ))
+    return HttpResponse('APPID未注册', status=400)
+
+
+def query_order(request, appid):
+    # app = WechatApp.objects.filter(app_id=appid).first()
+    # if app:
+    #     return JsonResponse(app.make_order(
+    #         body=request.GET.get('body'),
+    #         total_fee=request.GET.get('total_fee'),
+    #         out_trade_no=request.GET.get('out_trade_no'),
+    #         user_id=request.GET.get('user_id'),
+    #         product_id=request.GET.get('product_id'),
+    #     ), safe=False)
+    app = AlipayApp.objects.filter(app_id=appid).first()
+    if app:
+        return HttpResponse(app.query_order(
+            out_trade_no=request.GET.get('out_trade_no', ''),
+        ))
+    return HttpResponse('APPID未注册', status=400)
 
 
 def auth(request, appid):
