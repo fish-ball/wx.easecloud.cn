@@ -156,6 +156,7 @@ class AlipayApp(PlatformApp):
     def alipay_sign_url(self, args):
         return '&'.join(['{}={}'.format(k, v) for k, v
                          in sorted(dict(sign=self.alipay_sign(args), **args).items())])
+
     # def alipay_sign_url(self, args):
     #     from urllib.parse import quote
     #     order_info = '&'.join(['{}={}'.format(k, v) for k, v in sorted(args.items())])
@@ -182,6 +183,12 @@ class AlipayApp(PlatformApp):
         return self.alipay_sign_url(args)
 
     def query_order(self, out_trade_no, trade_no=''):
+        """
+        查询订单，
+        :param out_trade_no:
+        :param trade_no:
+        :return:
+        """
         import http.client
         http.client.HTTPConnection._http_vsn = 10
         http.client.HTTPConnection._http_vsn_str = 'HTTP/1.1'
@@ -202,7 +209,7 @@ class AlipayApp(PlatformApp):
         args['sign'] = self.alipay_sign(args)
         url = 'https://openapi.alipay.com/gateway.do?{}'.format(urlencode(args))
         resp = urlopen(url)
-        return resp.read().decode()
+        return json.loads(resp.read().decode())
 
 
 class WechatApp(PlatformApp):
@@ -402,6 +409,21 @@ class WechatApp(PlatformApp):
             out_trade_no=out_trade_no,
         )
         return wechat_order.get_appapi_params(order_data['prepay_id'])
+
+    def query_order(self, out_trade_no, trade_no=''):
+        """
+        查询订单，
+        :param out_trade_no:
+        :param trade_no:
+        :return:
+        """
+        from wechatpy import pay
+        wechat_order = pay.api.WeChatOrder(self.wechat_pay())
+        try:
+            result = wechat_order.query(out_trade_no=out_trade_no)
+            return dict(result)
+        except:
+            return None
 
     def get_jsapi_params(self, prepay_id):
         """ 返回 jsapi 的付款对象 """
