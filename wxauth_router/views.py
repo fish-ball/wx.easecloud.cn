@@ -13,6 +13,7 @@ from django.conf import settings
 from config.models import Option
 
 from .models import *
+from . import utils as u
 
 
 def index(request):
@@ -137,13 +138,49 @@ def make_order(request, appid):
         ), safe=False)
     app = AlipayApp.objects.filter(app_id=appid).first()
     if app:
-        return HttpResponse(app.make_order_wap(
+        args = app.make_order_wap(
             subject=request.GET.get('subject'),
             out_trade_no=request.GET.get('out_trade_no'),
             total_amount=request.GET.get('total_amount'),
             body=request.GET.get('body', ''),
-        ))
+        )
+        return HttpResponse(u.dict_to_url(args))
     return HttpResponse('APPID未注册', status=400)
+
+
+def make_order_form(request, appid):
+    """
+    生成支付的 html 元素，将此 HTML 元素附加到页面中，自动调起支付
+    :param request:
+    :param appid:
+    :return:
+    """
+    import re
+    from urllib.parse import urljoin, quote_plus
+    app = AlipayMapiApp.objects.filter(app_id=appid).first()
+    if app:
+        args = app.make_order_www(
+            subject=request.GET.get('subject', ''),
+            body=request.GET.get('body', ''),
+            out_trade_no=request.GET.get('out_trade_no'),
+            total_amount=float(request.GET.get('total_amount')),
+        )
+        return HttpResponse(u.make_form(args, 'https://mapi.alipay.com/gateway.do', 'get'))
+
+    # app = AlipayApp.objects.filter(app_id=appid).first()
+    # if app:
+    #     sign_url = app.make_order_wap(
+    #         subject=request.GET.get('subject'),
+    #         out_trade_no=request.GET.get('out_trade_no'),
+    #         total_amount=request.GET.get('total_amount'),
+    #         body=request.GET.get('body', ''),
+    #     )
+    #     html = ''
+    #     for row in sign_url.split('&'):
+    #         [(key, val)] = re.findall(r'^([^=+])=(.+)$', row)
+    #         html += '<input type="hidden" value=\'{}\' />'
+
+    return HttpResponse('', status=400)
 
 
 def query_order(request, appid):
