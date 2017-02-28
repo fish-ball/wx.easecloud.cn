@@ -191,6 +191,32 @@ def make_order_form(request, appid):
     return HttpResponse('', status=400)
 
 
+def verify_notify(request, appid):
+    """
+    验签 notify
+    :param request:
+    :param appid:
+    :return: 返回 JSON: dict(success: true/false, out_trade_no: <str>, amount: <number>)
+    """
+    app = AlipayMapiApp.objects.filter(app_id=appid).first()
+    if app:
+        return JsonResponse(app.verify_notify(request))
+    return HttpResponse('不支持的APP类型', status=400)
+
+
+def verify_return(request, appid):
+    """
+    验签 return
+    :param request:
+    :param appid:
+    :return: 返回 JSON: dict(success: true/false, out_trade_no: <str>, amount: <number>)
+    """
+    app = AlipayMapiApp.objects.filter(app_id=appid).first()
+    if app:
+        return JsonResponse(app.verify_return(request))
+    return HttpResponse('不支持的APP类型', status=400)
+
+
 def query_order(request, appid):
     app = WechatApp.objects.filter(app_id=appid).first()
     if app:
