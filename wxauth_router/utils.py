@@ -1,4 +1,4 @@
-def make_form(args, action, cls='payment-form', method='post'):
+def make_form(args, action, method='post', cls='payment-form'):
     html = "<meta http-equiv='content-type' content='text/html; charset=utf-8'>"
     html += '<form class="{}" action="{}" method="{}">'.format(cls, action, method)
     for k, v in args.items():

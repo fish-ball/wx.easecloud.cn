@@ -165,7 +165,7 @@ def make_order_form(request, appid):
             out_trade_no=request.GET.get('out_trade_no'),
             total_amount=float(request.GET.get('total_amount')),
         )
-        return HttpResponse(u.make_form(args, 'https://mapi.alipay.com/gateway.do', 'get'))
+        return HttpResponse(u.make_form(args, 'https://mapi.alipay.com/gateway.do'))
 
     # app = AlipayApp.objects.filter(app_id=appid).first()
     # if app:
