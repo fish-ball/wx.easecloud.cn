@@ -58,6 +58,9 @@ class PlatformApp(models.Model):
     class Meta:
         abstract = True
 
+    def __str__(self):
+        return self.title
+
 
 class AlipayMapiApp(PlatformApp):
     """
@@ -218,9 +221,6 @@ class AlipayApp(PlatformApp):
         verbose_name = '支付宝APP'
         verbose_name_plural = '支付宝APP'
         db_table = 'wxauth_alipay_app'
-
-    def __str__(self):
-        return self.title
 
     def rsa_sign(self, text):
         """ 用当前的 APP 证书 SHA1 签名一个字符串 """
