@@ -145,6 +145,14 @@ def make_order(request, appid):
             body=request.GET.get('body', ''),
         )
         return HttpResponse(u.dict_to_url(args))
+    app = AlipayMapiApp.objects.filter(app_id=appid).first()
+    if app:
+        return HttpResponse(app.make_order_www_url(
+            subject=request.GET.get('subject'),
+            out_trade_no=request.GET.get('out_trade_no'),
+            total_amount=request.GET.get('total_amount'),
+            body=request.GET.get('body', ''),
+        ))
     return HttpResponse('APPID未注册', status=400)
 
 
@@ -155,17 +163,17 @@ def make_order_form(request, appid):
     :param appid:
     :return:
     """
-    import re
-    from urllib.parse import urljoin, quote_plus
-    app = AlipayMapiApp.objects.filter(app_id=appid).first()
-    if app:
-        args = app.make_order_www(
-            subject=request.GET.get('subject', ''),
-            body=request.GET.get('body', ''),
-            out_trade_no=request.GET.get('out_trade_no'),
-            total_amount=float(request.GET.get('total_amount')),
-        )
-        return HttpResponse(u.make_form(args, 'https://mapi.alipay.com/gateway.do'))
+    # import re
+    # from urllib.parse import urljoin, quote_plus
+    # app = AlipayMapiApp.objects.filter(app_id=appid).first()
+    # if app:
+    #     args = app.make_order_www(
+    #         subject=request.GET.get('subject', ''),
+    #         body=request.GET.get('body', ''),
+    #         out_trade_no=request.GET.get('out_trade_no'),
+    #         total_amount=float(request.GET.get('total_amount')),
+    #     )
+    #     return HttpResponse(u.make_form(args, 'https://mapi.alipay.com/gateway.do'))
 
     # app = AlipayApp.objects.filter(app_id=appid).first()
     # if app:

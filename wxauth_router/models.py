@@ -87,15 +87,21 @@ class AlipayMapiApp(PlatformApp):
 
     def make_order_www_url(self, subject, out_trade_no, total_amount, body=''):
         from alipay import Alipay
-        alipay = Alipay(pid=self.app_id, key=self.app_secret, seller_email=self.seller_email)
-        return alipay.create_direct_pay_by_user_url(
+        alipay = Alipay(self.app_id, self.app_secret, self.seller_email)
+        print(alipay.pid, alipay.key)
+        extra = dict()
+        if body:
+            extra['body'] = body
+        url = alipay.create_direct_pay_by_user_url(
             out_trade_no=out_trade_no,
             subject=subject,
-            total_amount=total_amount,
-            body=body,
+            total_fee=total_amount,
             notify_url=self.notify_url,
             return_url=self.return_url,
+            **extra,
         )
+        print(url)
+        return url
 
     # def make_order_www(self, subject, out_trade_no, total_amount, body='', charset='utf-8'):
     #     # TODO: 网站支付
