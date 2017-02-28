@@ -9,6 +9,7 @@ from django.shortcuts import render, redirect
 from django.http \
     import HttpResponse, JsonResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
 from config.models import Option
 
@@ -191,6 +192,7 @@ def make_order_form(request, appid):
     return HttpResponse('', status=400)
 
 
+@csrf_exempt
 def verify_notify(request, appid):
     """
     验签 notify
