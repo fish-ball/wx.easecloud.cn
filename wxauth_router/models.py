@@ -109,10 +109,8 @@ class AlipayMapiApp(PlatformApp):
 
     def verify_return(self, request):
         alipay = self.get_alipay()
-        print(request.GET)
-        print(alipay.verify_notify(**request.GET))
         return dict(
-            success=alipay.verify_notify(**request.GET) and
+            success=alipay.verify_notify(**dict(request.GET.items())) and
                     request.GET.get('trade_status') == 'TRADE_SUCCESS',
             out_trade_no=request.GET.get('out_trade_no'),
             amount=float(request.GET.get('total_fee')),
@@ -120,10 +118,8 @@ class AlipayMapiApp(PlatformApp):
 
     def verify_notify(self, request):
         alipay = self.get_alipay()
-        print(request.POST)
-        print(alipay.verify_notify(**request.POST))
         return dict(
-            success=alipay.verify_notify(**request.POST) and
+            success=alipay.verify_notify(**dict(request.POST.items())) and
                     request.POST.get('trade_status') == 'TRADE_SUCCESS',
             out_trade_no=request.POST.get('out_trade_no'),
             amount=float(request.POST.get('total_fee')),
