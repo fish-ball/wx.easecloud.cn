@@ -62,6 +62,19 @@ class PlatformApp(models.Model):
         return self.title
 
 
+class PaypalApp(PlatformApp):
+    class Meta:
+        verbose_name = 'PayPal APP'
+        verbose_name_plural = 'PayPal APP'
+        db_table = 'wxauth_paypal_app'
+
+    def make_order_www_url(self, subject, out_trade_no, total_amount, body=''):
+        params = dict(
+
+        )
+        return url
+
+
 class AlipayMapiApp(PlatformApp):
     """
     支付宝旧版支付接口（MAPI）产品
@@ -532,7 +545,10 @@ class WechatApp(PlatformApp):
             product_id=product_id,
             out_trade_no=out_trade_no,
         )
-        return wechat_order.get_appapi_params(order_data['prepay_id'])
+        # 扫码支付的跳转链接
+        result = wechat_order.get_appapi_params(order_data['prepay_id'])
+        result['code_url'] = order_data.get('code_url')
+        return result
 
     def query_order(self, out_trade_no, trade_no=''):
         """

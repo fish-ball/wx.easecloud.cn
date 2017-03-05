@@ -130,6 +130,8 @@ def verify_key(request, key):
 def make_order(request, appid):
     app = WechatApp.objects.filter(app_id=appid).first()
     if app:
+        # 允许临时通过 request 参数改变 trade_type，改而不存
+        app.trade_type = request.GET.get('trade_type') or app.trade_type
         return JsonResponse(app.make_order(
             body=request.GET.get('body'),
             total_fee=request.GET.get('total_fee'),
@@ -154,6 +156,14 @@ def make_order(request, appid):
             total_amount=request.GET.get('total_amount'),
             body=request.GET.get('body', ''),
         ))
+    # app = PaypalApp.objects.filter(app_id=appid).first()
+    # if app:
+    #     return HttpResponse(app.make_order_www_url(
+    #         subject=request.GET.get('subject'),
+    #         out_trade_no=request.GET.get('out_trade_no'),
+    #         total_amount=request.GET.get('total_amount'),
+    #         body=request.GET.get('body', ''),
+    #     ))
     return HttpResponse('APPID未注册', status=400)
 
 
@@ -164,6 +174,38 @@ def make_order_form(request, appid):
     :param appid:
     :return:
     """
+    return HttpResponse("""<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gbk" />
+</head>
+<!-- paypal沙盒支付测试地址 -->
+<form id="pay_form" name="pay_form" action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post">
+<!-- 支付金额-->
+<input type="hidden" name="amount" id="amount" value="0.5">
+<!-- 自己的参数 商品条目-->
+<input type="hidden" name="item_number" id="item_number" value="xiu90 coins:50">
+<!-- 表示立即支付-->
+<input type="hidden" name="cmd" id="cmd" value="_xclick">
+<!-- 商品名称-->
+<input type="hidden" name="item_name" id="item_name" value="buy xiu90 coins">
+<!-- 商户订单唯一id 不可重复 -->
+<!--
+80W284485P519543T
+<input type="hidden" name="invoice" id="invoice" value="201604291655176">
+ -->
+ <!--支付成功后台通知地址-->
+<input type="hidden" name="notify_url" id="notify_url" value="http://www.igo19.com/accounting/servlet/paypalNotify">
+<!--支付成功返回地址-->
+<input type="hidden" name="return" id="return" value="http://www.igo19.com/">
+<input type="hidden" name="lc" id="lc" value="China">
+<!--支付取消返回地址-->
+<input type="hidden" name="cancel_return" id="cancel_return" value="http://www.igo19.com/">
+<input type="hidden" name="currency_code" id="currency_code" value="USD">
+<!--商户邮件-->
+<input type="hidden" name="business" id="business" value="2307793-facilitator@qq.com">
+</form>
+<script language="javascript">document.pay_form.submit();</script>
+</html>""")
     # import re
     # from urllib.parse import urljoin, quote_plus
     # app = AlipayMapiApp.objects.filter(app_id=appid).first()
