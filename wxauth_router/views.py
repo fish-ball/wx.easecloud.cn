@@ -24,64 +24,94 @@ def index(request):
     :return:
     """
 
-    # 第一步：获取 code 和 state 之后传入本页面
+    # 获取 session 保存的跳转前参数并重置 session
 
-    code = request.GET.get('code', '')
-    state = request.GET.get('state', '')
+    oauth_app_id = request.session.get('oauth_app_id') or ''
+    request.session.delete('oauth_app_id')
 
-    # print(code)
+    oauth_redirect_uri = request.session.get('oauth_redirect_uri') or ''
+    request.session.delete('oauth_redirect_uri')
 
-    app = WechatApp.objects.filter(
-        domain=request.get_host(),
+    oauth_params = request.session.get('oauth_params')
+    request.session.delete('oauth_params')
+
+    # PayPal
+    app = PaypalApp.objects.filter(
+        app_id=oauth_app_id,
     ).first()
 
-    if not app:
-        return HttpResponse(status=404)
-
-    if not code:
-        ua = request.META.get('HTTP_USER_AGENT')
-        # print(('MicroMessenger' in ua), ua)
-        # print(domain.domain, domain.title)
-        if 'MicroMessenger' in ua and app:
-            return redirect(
-                'https://open.weixin.qq.com/connect/oauth2/authorize'
-                '?appid=%s&redirect_uri=%s'
-                '&response_type=code'
-                '&scope=snsapi_userinfo'
-                '&state=#wechat_redirect' % (
-                    app.app_id,
-                    'http%3a%2f%2f' + app.domain,
-                )
-            )
-        return redirect('/admin')
-
-    wxuser = app.get_sns_user(code)
-    if not wxuser:
-        return HttpResponseBadRequest('获取用户信息失败，详细错误信息请查看错误日志')
-
-    # 第四步：根据 state 值进行跳转
-    # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
-    target = RequestTarget.objects.filter(key=state[:8]).first()
-
-    if target:
-        redirect_uri = target.url
-    else:
-        # 如果没有指定，采用跳转前写入 session 的 redirect_uri
-        redirect_uri = request.session.get('redirect_uri')
-
-    # 截取后段传递的参数
-    params = state[8:] or request.session.get('wxauth_params') or ''
-
-    if redirect_uri:
+    if app:
+        code = request.GET.get('code', '')
+        token = app.get_token_by_code(code)
         return redirect(
-            redirect_uri + '%sticket=%s&state=%s' % (
-                '&' if '?' in redirect_uri else '?',
-                ResultTicket.make(wxuser).key,
-                params
+            oauth_redirect_uri + '%stoken_type=%s&access_token=%s' % (
+                '&' if '?' in oauth_redirect_uri else '?',
+                token.token_type,
+                token.access_token,
             )
         )
 
-    return HttpResponseBadRequest('验证回跳地址没有指定')
+    # 微信公众号
+    app = WechatApp.objects.filter(
+        models.Q(app_id=oauth_app_id) |
+        models.Q(domain=request.get_host())
+    ).first()
+
+    if app:
+
+        # 第一步：获取 code 和 state 之后传入本页面
+        code = request.GET.get('code', '')
+        state = request.GET.get('state', '')
+
+        if not code:
+            # @deprecated
+            # V1.0 API，直接跳转到首页请求发起 OAuth
+            ua = request.META.get('HTTP_USER_AGENT')
+            # print(('MicroMessenger' in ua), ua)
+            # print(domain.domain, domain.title)
+            if 'MicroMessenger' in ua and app:
+                return redirect(
+                    'https://open.weixin.qq.com/connect/oauth2/authorize'
+                    '?appid=%s&redirect_uri=%s'
+                    '&response_type=code'
+                    '&scope=snsapi_userinfo'
+                    '&state=#wechat_redirect' % (
+                        app.app_id,
+                        'http%3a%2f%2f' + app.domain,
+                    )
+                )
+            else:
+                return redirect('/admin')
+
+        wxuser = app.get_sns_user(code)
+        if not wxuser:
+            return HttpResponseBadRequest('获取用户信息失败，详细错误信息请查看错误日志')
+
+        # 第四步：根据 state 值进行跳转
+        # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
+        target = RequestTarget.objects.filter(key=state[:8]).first()
+
+        if target:
+            redirect_uri = target.url
+        else:
+            # 如果没有指定，采用跳转前写入 session 的 redirect_uri
+            redirect_uri = oauth_redirect_uri
+
+        # 截取后段传递的参数
+        params = state[8:] or oauth_params or ''
+
+        if redirect_uri:
+            return redirect(
+                redirect_uri + '%sticket=%s&state=%s' % (
+                    '&' if '?' in redirect_uri else '?',
+                    ResultTicket.make(wxuser).key,
+                    params
+                )
+            )
+
+        return HttpResponseBadRequest('验证回跳地址没有指定')
+
+    return redirect('/admin')
 
 
 # def user(request, openid):
@@ -167,71 +197,71 @@ def make_order(request, appid):
     return HttpResponse('APPID未注册', status=400)
 
 
-def make_order_form(request, appid):
-    """
-    生成支付的 html 元素，将此 HTML 元素附加到页面中，自动调起支付
-    :param request:
-    :param appid:
-    :return:
-    """
-    return HttpResponse("""<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=gbk" />
-</head>
-<!-- paypal沙盒支付测试地址 -->
-<form id="pay_form" name="pay_form" action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post">
-<!-- 支付金额-->
-<input type="hidden" name="amount" id="amount" value="0.5">
-<!-- 自己的参数 商品条目-->
-<input type="hidden" name="item_number" id="item_number" value="xiu90 coins:50">
-<!-- 表示立即支付-->
-<input type="hidden" name="cmd" id="cmd" value="_xclick">
-<!-- 商品名称-->
-<input type="hidden" name="item_name" id="item_name" value="buy xiu90 coins">
-<!-- 商户订单唯一id 不可重复 -->
-<!--
-80W284485P519543T
-<input type="hidden" name="invoice" id="invoice" value="201604291655176">
- -->
- <!--支付成功后台通知地址-->
-<input type="hidden" name="notify_url" id="notify_url" value="http://www.igo19.com/accounting/servlet/paypalNotify">
-<!--支付成功返回地址-->
-<input type="hidden" name="return" id="return" value="http://www.igo19.com/">
-<input type="hidden" name="lc" id="lc" value="China">
-<!--支付取消返回地址-->
-<input type="hidden" name="cancel_return" id="cancel_return" value="http://www.igo19.com/">
-<input type="hidden" name="currency_code" id="currency_code" value="USD">
-<!--商户邮件-->
-<input type="hidden" name="business" id="business" value="2307793-facilitator@qq.com">
-</form>
-<script language="javascript">document.pay_form.submit();</script>
-</html>""")
-    # import re
-    # from urllib.parse import urljoin, quote_plus
-    # app = AlipayMapiApp.objects.filter(app_id=appid).first()
-    # if app:
-    #     args = app.make_order_www(
-    #         subject=request.GET.get('subject', ''),
-    #         body=request.GET.get('body', ''),
-    #         out_trade_no=request.GET.get('out_trade_no'),
-    #         total_amount=float(request.GET.get('total_amount')),
-    #     )
-    #     return HttpResponse(u.make_form(args, 'https://mapi.alipay.com/gateway.do'))
-
-    # app = AlipayApp.objects.filter(app_id=appid).first()
-    # if app:
-    #     sign_url = app.make_order_wap(
-    #         subject=request.GET.get('subject'),
-    #         out_trade_no=request.GET.get('out_trade_no'),
-    #         total_amount=request.GET.get('total_amount'),
-    #         body=request.GET.get('body', ''),
-    #     )
-    #     html = ''
-    #     for row in sign_url.split('&'):
-    #         [(key, val)] = re.findall(r'^([^=+])=(.+)$', row)
-    #         html += '<input type="hidden" value=\'{}\' />'
-
-    return HttpResponse('', status=400)
+# def make_order_form(request, appid):
+#     """
+#     生成支付的 html 元素，将此 HTML 元素附加到页面中，自动调起支付
+#     :param request:
+#     :param appid:
+#     :return:
+#     """
+#     return HttpResponse("""<html>
+# <head>
+# <meta http-equiv="Content-Type" content="text/html; charset=gbk" />
+# </head>
+# <!-- paypal沙盒支付测试地址 -->
+# <form id="pay_form" name="pay_form" action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post">
+# <!-- 支付金额-->
+# <input type="hidden" name="amount" id="amount" value="0.5">
+# <!-- 自己的参数 商品条目-->
+# <input type="hidden" name="item_number" id="item_number" value="xiu90 coins:50">
+# <!-- 表示立即支付-->
+# <input type="hidden" name="cmd" id="cmd" value="_xclick">
+# <!-- 商品名称-->
+# <input type="hidden" name="item_name" id="item_name" value="buy xiu90 coins">
+# <!-- 商户订单唯一id 不可重复 -->
+# <!--
+# 80W284485P519543T
+# <input type="hidden" name="invoice" id="invoice" value="201604291655176">
+#  -->
+#  <!--支付成功后台通知地址-->
+# <input type="hidden" name="notify_url" id="notify_url" value="http://www.igo19.com/accounting/servlet/paypalNotify">
+# <!--支付成功返回地址-->
+# <input type="hidden" name="return" id="return" value="http://www.igo19.com/">
+# <input type="hidden" name="lc" id="lc" value="China">
+# <!--支付取消返回地址-->
+# <input type="hidden" name="cancel_return" id="cancel_return" value="http://www.igo19.com/">
+# <input type="hidden" name="currency_code" id="currency_code" value="USD">
+# <!--商户邮件-->
+# <input type="hidden" name="business" id="business" value="2307793-facilitator@qq.com">
+# </form>
+# <script language="javascript">document.pay_form.submit();</script>
+# </html>""")
+#     # import re
+#     # from urllib.parse import urljoin, quote_plus
+#     # app = AlipayMapiApp.objects.filter(app_id=appid).first()
+#     # if app:
+#     #     args = app.make_order_www(
+#     #         subject=request.GET.get('subject', ''),
+#     #         body=request.GET.get('body', ''),
+#     #         out_trade_no=request.GET.get('out_trade_no'),
+#     #         total_amount=float(request.GET.get('total_amount')),
+#     #     )
+#     #     return HttpResponse(u.make_form(args, 'https://mapi.alipay.com/gateway.do'))
+#
+#     # app = AlipayApp.objects.filter(app_id=appid).first()
+#     # if app:
+#     #     sign_url = app.make_order_wap(
+#     #         subject=request.GET.get('subject'),
+#     #         out_trade_no=request.GET.get('out_trade_no'),
+#     #         total_amount=request.GET.get('total_amount'),
+#     #         body=request.GET.get('body', ''),
+#     #     )
+#     #     html = ''
+#     #     for row in sign_url.split('&'):
+#     #         [(key, val)] = re.findall(r'^([^=+])=(.+)$', row)
+#     #         html += '<input type="hidden" value=\'{}\' />'
+#
+#     return HttpResponse('', status=400)
 
 
 @csrf_exempt
@@ -290,26 +320,22 @@ def auth(request, appid):
     assert redirect_uri, \
         '没有找到回调地址，请从 POST.redirect_uri，GET.redirect_uri，' \
         'HTTP_REFERER 中选一个传入'
-    request.session['redirect_uri'] = redirect_uri
-
+    request.session['oauth_redirect_uri'] = redirect_uri
     # 记录传入的 params
-    request.session['wxauth_params'] = \
-        request.POST.get('params') \
-        or request.GET.get('params')
+    request.session['oauth_params'] = \
+        request.POST.get('params') or request.GET.get('params')
+    # 记录传入的 oauth_app_id
+    request.session['oauth_app_id'] = appid
 
-    from urllib.parse import urljoin, quote_plus
-    auth_uri = (
-        'https://open.weixin.qq.com/connect/oauth2/authorize'
-        '?appid={}'
-        '&redirect_uri={}'
-        '&response_type=code'
-        '&scope=snsapi_userinfo'
-        '&state=#wechat_redirect'
-    ).format(
-        appid,
-        quote_plus(urljoin(request.get_raw_uri(), reverse(index))),
-    )
-    return redirect(auth_uri)
+    # 根据 app 类型进行跳转
+    # 微信公众号
+    app = WechatApp.objects.filter(app_id=appid).first()
+    if app:
+        return redirect(app.get_oauth_login_url())
+    # PayPal OAuth
+    app = PaypalApp.objects.filter(app_id=appid).first()
+    if app:
+        return redirect(app.get_oauth_login_url())
 
 
 def sns_user(request, appid, code):

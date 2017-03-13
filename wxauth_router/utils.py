@@ -11,3 +11,4 @@ def make_form(args, action, method='post', cls='payment-form'):
 
 def dict_to_url(args):
     return '&'.join(['{}={}'.format(k, v) for k, v in sorted(args.items())])
+

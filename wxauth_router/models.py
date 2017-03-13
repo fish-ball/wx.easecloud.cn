@@ -33,13 +33,13 @@ class PlatformApp(models.Model):
 
     app_id = models.CharField(
         verbose_name='APP_ID',
-        max_length=50,
+        max_length=176,
         unique=True,
     )
 
     app_secret = models.CharField(
         verbose_name='APP_SECRET',
-        max_length=50,
+        max_length=255,
         blank=True,
     )
 
@@ -55,24 +55,63 @@ class PlatformApp(models.Model):
         default='',
     )
 
+    oauth_redirect_url = models.URLField(
+        verbose_name='OAuth 认证跳转地址',
+        blank=True,
+        default='',
+        help_text='如果是，请务必将本地址设定为本 API 的 index，例如 http://wx.easecloud.cn'
+                  '并且在对应的平台中注册此地址，不填的话默认会使用当前地址',
+    )
+
     class Meta:
         abstract = True
 
     def __str__(self):
         return self.title
 
+    def get_oauth_redirect_url(self):
+        from urllib.parse import urljoin
+        from .middleware import get_request
+        from .views import index
+        from django.shortcuts import reverse
+        return self.oauth_redirect_url or \
+               urljoin(get_request().get_raw_uri(), reverse(index))
+
 
 class PaypalApp(PlatformApp):
+    is_sandbox = models.BooleanField(
+        verbose_name='是否沙盒测试环境',
+        default=False,
+    )
+
     class Meta:
         verbose_name = 'PayPal APP'
         verbose_name_plural = 'PayPal APP'
         db_table = 'wxauth_paypal_app'
 
-    def make_order_www_url(self, subject, out_trade_no, total_amount, body=''):
-        params = dict(
+    def get_sdk(self):
+        import paypalrestsdk
+        paypalrestsdk.configure(dict(
+            mode='sandbox' if self.is_sandbox else 'live',
+            client_id=self.app_id,
+            client_secret=self.app_secret,
+            openid_redirect_uri=self.get_oauth_redirect_url(),
+        ))
+        return paypalrestsdk
 
-        )
-        return url
+    def get_oauth_login_url(self):
+        return self.get_sdk().Tokeninfo.authorize_url(dict(
+            scope='openid profile',
+        ))
+
+    def get_token_by_code(self, code):
+        return self.get_sdk().Tokeninfo.create(code)
+
+    def make_order(self, subject, out_trade_no, total_amount, body=''):
+        """
+        下单，返回 PAY_ID
+        :return:
+        """
 
 
 class AlipayMapiApp(PlatformApp):
@@ -519,6 +558,20 @@ class WechatApp(PlatformApp):
             mch_cert=self.mch_cert(),
             mch_key=self.mch_key(),
         )
+
+    def get_oauth_login_url(self):
+        auth_uri = (
+            'https://open.weixin.qq.com/connect/oauth2/authorize'
+            '?appid={}'
+            '&redirect_uri={}'
+            '&response_type=code'
+            '&scope=snsapi_userinfo'
+            '&state=#wechat_redirect'
+        ).format(
+            self.app_id,
+            self.get_oauth_redirect_url(),
+        )
+        return auth_uri
 
     def make_order(self, body, total_fee,
                    out_trade_no=None, user_id=None, product_id=None):

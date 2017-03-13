@@ -4,3 +4,4 @@ wechatpy
 gunicorn
 pillow
 pycrypto
+paypalrestsdk

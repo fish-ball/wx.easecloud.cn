@@ -23,7 +23,7 @@ import wxauth_router.views
 urlpatterns = [
     url(r'^$', wxauth_router.views.index),
     url(r'^make_order/(?P<appid>.+)/$', wxauth_router.views.make_order),
-    url(r'^make_order_form/(?P<appid>.+)/$', wxauth_router.views.make_order_form),
+    # url(r'^make_order_form/(?P<appid>.+)/$', wxauth_router.views.make_order_form),
     url(r'^query_order/(?P<appid>.+)/$', wxauth_router.views.query_order),
     url(r'^verify_notify/(?P<appid>.+)/$', wxauth_router.views.verify_notify),
     url(r'^verify_return/(?P<appid>.+)/$', wxauth_router.views.verify_return),
