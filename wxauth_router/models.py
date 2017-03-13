@@ -105,13 +105,64 @@ class PaypalApp(PlatformApp):
         ))
 
     def get_token_by_code(self, code):
-        return self.get_sdk().Tokeninfo.create(code)
+        sdk = self.get_sdk()
+        token = sdk.Tokeninfo.create(code)
+        access_token = token.access_token
+        print(token)
+        print(access_token)
+        # self.make_order('我的订单', '112-23', 0.01)
+        # return dict()
+        return token
 
     def make_order(self, subject, out_trade_no, total_amount, body=''):
         """
         下单，返回 PAY_ID
         :return:
         """
+        sdk = self.get_sdk()
+        payment = sdk.Payment(dict(
+            intent='sale',
+            payer=dict(payment_method='paypal'),
+            transactions=[dict(
+                item_list=dict(
+                    items=[dict(
+                        name='普通订单',
+                        sku=out_trade_no,
+                        price=total_amount,
+                        currency='USD',
+                        quantity=1,
+                    )],
+                ),
+                amount=dict(
+                    total=total_amount,
+                    currency='USD',
+                    # details=dict(
+                    #     subtotal='0.01',
+                    #     tax='0',
+                    #     shipping='0',
+                    #     handling_fee='0',
+                    #     shipping_discount='0',
+                    #     insurance='0',
+                    # )
+                ),
+                description=subject,
+            )],
+            note_to_payer='body',
+            redirect_urls=dict(
+                return_url=self.return_url,
+                cancel_url=self.return_url,
+            ),
+        ))
+        if payment.create():
+            # print('failed')
+            # print(payment.links[1].href)
+            # print('create success')
+            return payment.links[1].href
+
+        # print(payment.error)
+        # print('failed')
+        # print(payment)
+        raise ValidationError(payment.error)
 
 
 class AlipayMapiApp(PlatformApp):
