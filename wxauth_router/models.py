@@ -163,7 +163,7 @@ class PaypalApp(PlatformApp):
         :return:
         """
         sdk = self.get_sdk()
-        total_amount = CurrencyRate.convert(total_amount, from_currency, to_currency)
+        total_amount = max(0.01, CurrencyRate.convert(total_amount, from_currency, to_currency))
         payment = sdk.Payment(dict(
             intent='sale',
             payer=dict(payment_method='paypal'),
