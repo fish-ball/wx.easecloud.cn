@@ -193,6 +193,8 @@ def make_order(request, appid):
             out_trade_no=request.GET.get('out_trade_no'),
             total_amount=request.GET.get('total_amount'),
             body=request.GET.get('body', ''),
+            from_currency=request.GET.get('from_currency', 'CNY'),
+            to_currency=request.GET.get('to_currency', 'USD'),
         ))
     return HttpResponse('APPID未注册', status=400)
 
