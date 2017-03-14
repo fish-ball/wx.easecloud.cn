@@ -24,6 +24,49 @@ from base64 import b64decode, b64encode
 from rest_framework.response import Response
 
 
+class CurrencyRate(models.Model):
+    currency = models.CharField(
+        verbose_name='币种',
+        max_length=20,
+    )
+
+    date = models.DateField(
+        verbose_name='汇率时间',
+    )
+
+    rate = models.DecimalField(
+        verbose_name='汇率（兑1美元）',
+        max_digits=18,
+        decimal_places=6,
+    )
+
+    class Meta:
+        verbose_name = '汇率'
+        verbose_name_plural = '汇率'
+        unique_together = [('currency', 'date')]
+
+    def __str__(self):
+        return '[{}]1USD={}{}'.format(self.date.strftime('%Y-%m-%d'), self.rate, self.currency)
+
+    @classmethod
+    def get(cls, currency, dt=None):
+        dt = dt or datetime.date(datetime.now())
+        item = cls.objects.filter(date=dt, currency=currency).first()
+        if not item:
+            from urllib.request import urlopen
+            resp = urlopen('http://apilayer.net/api/live?access_key=fb8eb6b05a91727dd880143c550d828c')
+            data = json.loads(resp.read().decode()).get('quotes')
+            for k, v in data.items():
+                currency = k[3:]
+                item = cls.objects.create(date=dt, currency=currency, rate=v)
+        return float(item.rate)
+
+    @classmethod
+    def convert(cls, amount, from_currency, to_currency, digits=2, dt=None):
+        # dt = dt or datetime.date(datetime.now())
+        return round(float(amount) * cls.get(to_currency, dt) / cls.get(from_currency, dt), digits)
+
+
 class PlatformApp(models.Model):
     title = models.CharField(
         verbose_name='标题',
@@ -114,12 +157,13 @@ class PaypalApp(PlatformApp):
         # return dict()
         return token
 
-    def make_order(self, subject, out_trade_no, total_amount, body=''):
+    def make_order(self, subject, out_trade_no, total_amount, body='', from_currency='CNY', to_currency='USD'):
         """
         下单，返回 PAY_ID
         :return:
         """
         sdk = self.get_sdk()
+        total_amount = CurrencyRate.convert(total_amount, from_currency, to_currency)
         payment = sdk.Payment(dict(
             intent='sale',
             payer=dict(payment_method='paypal'),
@@ -129,13 +173,13 @@ class PaypalApp(PlatformApp):
                         name='普通订单',
                         sku=out_trade_no,
                         price=total_amount,
-                        currency='USD',
+                        currency=to_currency,
                         quantity=1,
                     )],
                 ),
                 amount=dict(
                     total=total_amount,
-                    currency='USD',
+                    currency=to_currency,
                     # details=dict(
                     #     subtotal='0.01',
                     #     tax='0',
