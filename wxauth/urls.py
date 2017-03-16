@@ -30,6 +30,8 @@ urlpatterns = [
     url(r'^sns_user/(?P<appid>.+)/(?P<code>.+)/$', wxauth_router.views.sns_user),
     url(r'^auth/(?P<appid>.+)/$', wxauth_router.views.auth),
     url(r'^ticket/(?P<key>.+)/$', wxauth_router.views.ticket),
+    url(r'^wx_jssdk/(?P<appid>.+)/$', wxauth_router.views.wx_jssdk),
+    url(r'^wx_jssdk_script/(?P<appid>.+)/$', wxauth_router.views.wx_jssdk_script),
     # url(r'^user/(?P<key>.+)/$', wxauth_router.views.ticket),
     url(r'^preview/$', wxauth_router.views.preview),
     url(r'^MP_verify_(?P<key>.+)\.txt$', wxauth_router.views.verify_key),

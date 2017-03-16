@@ -813,6 +813,163 @@ class WechatApp(PlatformApp):
         # TODO: 查询微信服务器主动获取订单信息
         pass
 
+    def get_wx_signature(self,
+                         method='sha1',
+                         timestamp='',
+                         nonceStr='',
+                         ticket='',
+                         request_url=''):
+        """
+        根据时间戳和随机字符串生成签名
+        :param method:
+        :return:
+        """
+
+        return 'gg'
+
+    def generate_nonce_str(self, length=16):
+        """
+        默认获取一个长度为16的随机字符串
+        :param length:
+        :return:
+        """
+        import random
+        chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        nonce_str = ''
+        for i in range(0, length - 1):
+            nonce_str += chars[random.randint(0, chars.__len__())]
+        return nonce_str
+
+    def get_jssdk_config(self, request, debug=None):
+        import time
+        from wechatpy.utils import random_string, to_text
+        from wechatpy.client.api import WeChatJSAPI
+        jsapi = WeChatJSAPI(self.get_wechat_client())
+        ticket = jsapi.get_jsapi_ticket()
+        nonce_str = random_string(32)
+        timestamp = to_text(int(time.time()))
+        url = request.META.get('HTTP_REFERER')
+        signature = jsapi.get_jsapi_signature(nonce_str, ticket, timestamp, url)
+        debug = bool(request.GET.get('debug')) if debug is None else debug
+
+        return dict(
+            debug=debug,
+            appId=self.app_id,
+            timestamp=timestamp,
+            nonceStr=nonce_str,
+            signature=signature,
+            jsApiList=[
+                'checkJsApi',
+                'onMenuShareTimeline',
+                'onMenuShareAppMessage',
+                'onMenuShareQQ',
+                'onMenuShareWeibo',
+                'hideMenuItems',
+                'showMenuItems',
+                'hideAllNonBaseMenuItem',
+                'showAllNonBaseMenuItem',
+                'translateVoice',
+                'startRecord',
+                'stopRecord',
+                'onRecordEnd',
+                'playVoice',
+                'pauseVoice',
+                'stopVoice',
+                'uploadVoice',
+                'downloadVoice',
+                'chooseImage',
+                'previewImage',
+                'uploadImage',
+                'downloadImage',
+                'getNetworkType',
+                'openLocation',
+                'getLocation',
+                'hideOptionMenu',
+                'showOptionMenu',
+                'closeWindow',
+                'scanQRCode',
+                'chooseWXPay',
+                'openProductSpecificView',
+                'addCard',
+                'chooseCard',
+                'openCard'
+            ],
+        )
+
+
+        # def get_wx_config(self):
+        #     url = 'https://api.weixin.qq.com/cgi-bin/token' \
+        #             '?grant_type=client_credential&' \
+        #             'appid={}&secret={}'.format(self.app_id, self.app_secret)
+        #     try:
+        #         from urllib.request import urlopen
+        #         import time
+        #         resp = urlopen(url)
+        #         data = json.loads(resp.read().decode())
+        #         assert data.get('access_token'), '获取 access token 失败'
+        #         access_token = data.get('access_token')
+        #         url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?' \
+        #             'access_token={}&type=jsapi'.format(access_token)
+        #         resp = urlopen(url)
+        #         data = json.loads(resp.read().decode())
+        #         assert data.get('ticket'), '获取 ticket 失败'
+        #         ticket = data.get('ticket')
+        #         request_url = 'gg'
+        #         timestamp = time.time().__round__()
+        #         nonceStr = self.generate_nonce_str()
+        #         signature = self.get_wx_signature(timestamp, nonceStr, ticket, request_url)
+        #         wx_config = dict(
+        #             appId=self.app_id,
+        #             timestamp=timestamp,
+        #             nonceStr=nonceStr,
+        #             signature=signature,
+        #             jsApiList=[
+        #                 'checkJsApi',
+        #                 'onMenuShareTimeline',
+        #                 'onMenuShareAppMessage',
+        #                 'onMenuShareQQ',
+        #                 'onMenuShareWeibo',
+        #                 'hideMenuItems',
+        #                 'showMenuItems',
+        #                 'hideAllNonBaseMenuItem',
+        #                 'showAllNonBaseMenuItem',
+        #                 'translateVoice',
+        #                 'startRecord',
+        #                 'stopRecord',
+        #                 'onRecordEnd',
+        #                 'playVoice',
+        #                 'pauseVoice',
+        #                 'stopVoice',
+        #                 'uploadVoice',
+        #                 'downloadVoice',
+        #                 'chooseImage',
+        #                 'previewImage',
+        #                 'uploadImage',
+        #                 'downloadImage',
+        #                 'getNetworkType',
+        #                 'openLocation',
+        #                 'getLocation',
+        #                 'hideOptionMenu',
+        #                 'showOptionMenu',
+        #                 'closeWindow',
+        #                 'scanQRCode',
+        #                 'chooseWXPay',
+        #                 'openProductSpecificView',
+        #                 'addCard',
+        #                 'chooseCard',
+        #                 'openCard'
+        #             ]
+        #         )
+        #         return wx_config
+        #
+        #     except Exception as ex:
+        #
+        #         # 跳过错误并且返回 None (输出到错误流)
+        #         import traceback
+        #         from sys import stderr
+        #         print(traceback.format_exc(), file=stderr)
+        #         return None
+
 
 # class WechatDomain(models.Model):
 #     """ 微信公众号域 """
