@@ -5,3 +5,4 @@ gunicorn
 pillow
 pycrypto
 paypalrestsdk
+django-paypal

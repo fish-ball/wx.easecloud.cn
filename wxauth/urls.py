@@ -13,17 +13,19 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.contrib import admin
 from django.conf.urls.static import static
 from django.conf import settings
 
 import wxauth_router.views
 
+
 urlpatterns = [
     url(r'^$', wxauth_router.views.index),
     url(r'^make_order/(?P<appid>.+)/$', wxauth_router.views.make_order),
     # url(r'^make_order_form/(?P<appid>.+)/$', wxauth_router.views.make_order_form),
+    url(r'^notify/(?P<appid>.+)/$', wxauth_router.views.notify),
     url(r'^query_order/(?P<appid>.+)/$', wxauth_router.views.query_order),
     url(r'^verify_notify/(?P<appid>.+)/$', wxauth_router.views.verify_notify),
     url(r'^verify_return/(?P<appid>.+)/$', wxauth_router.views.verify_return),
@@ -34,6 +36,7 @@ urlpatterns = [
     url(r'^preview/$', wxauth_router.views.preview),
     url(r'^MP_verify_(?P<key>.+)\.txt$', wxauth_router.views.verify_key),
     url(r'^admin/', admin.site.urls),
+    url(r'^paypal/', include('paypal.standard.ipn.urls', namespace='paypal')),
 ]
 
 if settings.DEBUG:

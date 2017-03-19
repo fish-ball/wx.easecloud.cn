@@ -36,7 +36,7 @@ def index(request):
     request.session.delete('oauth_params')
 
     # PayPal
-    app = PaypalApp.objects.filter(
+    app = PayPalApp.objects.filter(
         app_id=oauth_app_id,
     ).first()
 
@@ -186,7 +186,17 @@ def make_order(request, appid):
             total_amount=request.GET.get('total_amount'),
             body=request.GET.get('body', ''),
         ))
-    app = PaypalApp.objects.filter(app_id=appid).first()
+    app = PayPalApp.objects.filter(app_id=appid).first()
+    if app:
+        return JsonResponse(app.make_order(
+            subject=request.GET.get('subject'),
+            out_trade_no=request.GET.get('out_trade_no'),
+            total_amount=request.GET.get('total_amount'),
+            body=request.GET.get('body', ''),
+            from_currency=request.GET.get('from_currency', 'CNY'),
+            to_currency=request.GET.get('to_currency', 'USD'),
+        ))
+    app = PayPalStandardApp.objects.filter(app_id=appid).first()
     if app:
         return HttpResponse(app.make_order(
             subject=request.GET.get('subject'),
@@ -197,6 +207,15 @@ def make_order(request, appid):
             to_currency=request.GET.get('to_currency', 'USD'),
         ))
     return HttpResponse('APPID未注册', status=400)
+
+
+@csrf_exempt
+def notify(request, appid):
+    app = PayPalApp.objects.filter(app_id=appid).first()
+    if app:
+        print(dict(request.POST.items()))
+
+    return HttpResponse()
 
 
 @csrf_exempt
@@ -268,7 +287,7 @@ def auth(request, appid):
     if app:
         return redirect(app.get_oauth_login_url())
     # PayPal OAuth
-    app = PaypalApp.objects.filter(app_id=appid).first()
+    app = PayPalApp.objects.filter(app_id=appid).first()
     if app:
         return redirect(app.get_oauth_login_url())
 

@@ -64,7 +64,9 @@ class CurrencyRate(models.Model):
     @classmethod
     def convert(cls, amount, from_currency, to_currency, digits=2, dt=None):
         # dt = dt or datetime.date(datetime.now())
-        return round(float(amount) * cls.get(to_currency, dt) / cls.get(from_currency, dt), digits)
+        if from_currency != to_currency:
+            amount = float(amount) * cls.get(to_currency, dt) / cls.get(from_currency, dt)
+        return round(amount, digits)
 
 
 class PlatformApp(models.Model):
@@ -98,6 +100,12 @@ class PlatformApp(models.Model):
         default='',
     )
 
+    cancel_url = models.URLField(
+        verbose_name='取消操作返回 URL',
+        blank=True,
+        default='',
+    )
+
     oauth_redirect_url = models.URLField(
         verbose_name='OAuth 认证跳转地址',
         blank=True,
@@ -121,7 +129,60 @@ class PlatformApp(models.Model):
                urljoin(get_request().get_raw_uri(), reverse(index))
 
 
-class PaypalApp(PlatformApp):
+class PayPalStandardApp(PlatformApp):
+    """ PayPal Standard 支付，仅通过收款者邮箱即可完成支付
+    注意：需要自编一个 APP_ID，然后 APP_SECRET 采用邮箱
+    """
+
+    is_sandbox = models.BooleanField(
+        verbose_name='是否沙盒测试环境',
+        default=False,
+    )
+
+    class Meta:
+        verbose_name = 'PayPal Standard APP'
+        verbose_name_plural = 'PayPal Standard APP'
+        db_table = 'wxauth_paypal_standard_app'
+
+    def make_order(self, subject, out_trade_no, total_amount,
+                   body='', from_currency='CNY', to_currency='USD',
+                   locale='zh_CN'):
+        from paypal.standard.forms import PayPalPaymentsForm
+        from urllib.parse import urljoin
+        from .middleware import get_request
+        from django.shortcuts import reverse
+
+        settings.PAYPAL_TEST = self.is_sandbox
+
+        request = get_request()
+        notify_url = urljoin(request.build_absolute_uri(), reverse('paypal:paypal-ipn'))
+
+        # 字段参照
+        # https://developer.paypal.com/webapps/developer/docs/classic/paypal-payments-standard/integration-guide/Appx_websitestandard_htmlvariables/#paypal-checkout-page-variables
+        total_amount = max(0.01,
+                           CurrencyRate.convert(total_amount, from_currency, to_currency))
+        form_data = dict(
+            business=self.app_secret,
+            amount=total_amount,
+            currency_code=to_currency,
+            lc=locale,
+            item_name=subject,
+            invoice=out_trade_no,
+            notify_url=notify_url,
+            return_url=self.return_url,
+            cancel_return=self.cancel_url,
+            custom=body,
+            charset='utf-8',
+        )
+        form = PayPalPaymentsForm(initial=form_data)
+        return form.render()
+
+
+class PayPalApp(PlatformApp):
+
+    VERIFY_URL_PROD = 'https://www.paypal.com/cgi-bin/webscr'
+    VERIFY_URL_TEST = 'https://www.sandbox.paypal.com/cgi-bin/webscr'
+
     is_sandbox = models.BooleanField(
         verbose_name='是否沙盒测试环境',
         default=False,
@@ -157,6 +218,10 @@ class PaypalApp(PlatformApp):
         # return dict()
         return token
 
+    @staticmethod
+    def verify(request):
+        pass
+
     def make_order(self, subject, out_trade_no, total_amount, body='', from_currency='CNY', to_currency='USD'):
         """
         下单，返回 PAY_ID
@@ -191,7 +256,7 @@ class PaypalApp(PlatformApp):
                 ),
                 description=subject,
             )],
-            note_to_payer='body',
+            note_to_payer=body,
             redirect_urls=dict(
                 return_url=self.return_url,
                 cancel_url=self.return_url,
@@ -201,7 +266,9 @@ class PaypalApp(PlatformApp):
             # print('failed')
             # print(payment.links[1].href)
             # print('create success')
-            return payment.links[1].href
+            # print(payment.to_dict())
+            return payment.to_dict()
+            # return payment.links[1].href
 
         # print(payment.error)
         # print('failed')
