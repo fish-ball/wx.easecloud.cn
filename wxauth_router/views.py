@@ -306,3 +306,21 @@ def sns_user(request, appid, code):
         json.dumps(wxuser.serialize())
         if wxuser else '获取用户信息失败，可能是 code 已失效'
     )
+
+
+def wx_jssdk(request, appid):
+    """
+    :param request:
+    :param appid:
+    :return:
+    """
+    app = WechatApp.objects.get(app_id=appid)
+    wx_config = app.get_jssdk_config(request)
+    return JsonResponse(data=wx_config)
+
+
+def wx_jssdk_script(request, appid):
+    app = WechatApp.objects.get(app_id=appid)
+    return render(request, 'wxauth_router/wx_jssdk.js', dict(
+        wx_config=json.dumps(app.get_jssdk_config(request))
+    ), 'application/javascript')
