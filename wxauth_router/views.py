@@ -256,6 +256,11 @@ def query_order(request, appid):
         return JsonResponse(app.query_order(
             out_trade_no=request.GET.get('out_trade_no', ''),
         ), safe=False)
+    app = PayPalStandardApp.objects.filter(app_id=appid).first()
+    if app:
+        return JsonResponse(app.query_order(
+            out_trade_no=request.GET.get('out_trade_no', ''),
+        ), safe=False)
     return HttpResponse('APPID未注册', status=400)
 
 

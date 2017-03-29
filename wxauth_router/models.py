@@ -23,6 +23,7 @@ from base64 import b64decode, b64encode
 
 from rest_framework.response import Response
 
+from paypal.standard.ipn.signals import valid_ipn_received
 
 class CurrencyRate(models.Model):
     currency = models.CharField(
@@ -144,6 +145,24 @@ class PayPalStandardApp(PlatformApp):
         verbose_name_plural = 'PayPal Standard APP'
         db_table = 'wxauth_paypal_standard_app'
 
+    @staticmethod
+    def ipn_received_connector(sender, **kwargs):
+        from urllib.request import urlopen
+        from urllib.parse import urljoin
+        ipn_obj = sender
+        app = PayPalStandardApp.objects.filter(
+            app_secret=ipn_obj.receiver_email,
+        ).first()
+        notify_url = urljoin(app.notify_url, '?out_trade_no=' + ipn_obj.invoice)
+        print(notify_url)
+        urlopen(notify_url)
+
+    def query_order(self, out_trade_no):
+        from paypal.standard.ipn.models import PayPalIPN
+        from django.forms import model_to_dict
+        ipn = PayPalIPN.objects.get(invoice=out_trade_no)
+        return model_to_dict(ipn)
+
     def make_order(self, subject, out_trade_no, total_amount,
                    body='', from_currency='CNY', to_currency='USD',
                    locale='zh_CN'):
@@ -166,20 +185,25 @@ class PayPalStandardApp(PlatformApp):
             amount=total_amount,
             currency_code=to_currency,
             lc=locale,
+            rm=2,
             item_name=subject,
             invoice=out_trade_no,
             notify_url=notify_url,
-            return_url=self.return_url,
+            return_url=urljoin(self.return_url, '?out_trade_no=' + out_trade_no),
             cancel_return=self.cancel_url,
             custom=body,
             charset='utf-8',
         )
+        print(form_data)
         form = PayPalPaymentsForm(initial=form_data)
         return form.render()
 
 
-class PayPalApp(PlatformApp):
+# 注册 ipn 通知路由
+# valid_ipn_received.connect(PayPalStandardApp.ipn_received_connector)
 
+
+class PayPalApp(PlatformApp):
     VERIFY_URL_PROD = 'https://www.paypal.com/cgi-bin/webscr'
     VERIFY_URL_TEST = 'https://www.sandbox.paypal.com/cgi-bin/webscr'
 
