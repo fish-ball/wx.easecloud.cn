@@ -25,6 +25,7 @@ from rest_framework.response import Response
 
 from paypal.standard.ipn.signals import valid_ipn_received
 
+
 class CurrencyRate(models.Model):
     currency = models.CharField(
         verbose_name='币种',
@@ -540,9 +541,39 @@ class AlipayApp(PlatformApp):
                 out_trade_no=out_trade_no,
                 total_amount='{:.2f}'.format(float(total_amount)),
                 product_code='QUICK_WAP_PAY',
-            )),
+            ), separators=(',', ':')),
         )
         return self.alipay_sign_args(args)
+
+    def make_order_app(self, subject, out_trade_no, total_amount, body='', timestamp=None):
+        """
+        app 支付：
+        :param subject:
+        :param out_trade_no:
+        :param total_amount:
+        :param body:
+        :param timestamp:
+        :return:
+        """
+        args = dict(
+            app_id=self.app_id,
+            method='alipay.trade.app.pay',
+            charset='utf-8',
+            sign_type='RSA',
+            timestamp=(timestamp or datetime.now()).strftime('%Y-%m-%d %H:%M:%S'),
+            version='1.0',
+            notify_url=self.notify_url,
+            biz_content=json.dumps(dict(
+                body=body,
+                subject=subject,
+                out_trade_no=out_trade_no,
+                total_amount='{:.2f}'.format(float(total_amount)),
+                product_code='QUICK_MSECURITY_PAY',
+            ), separators=(',', ':')),
+        )
+        args = self.alipay_sign_args(args)
+        from urllib.parse import quote_plus
+        return '&'.join(['{}={}'.format(k, quote_plus(v)) for k, v in sorted(args.items())])
 
     def query_order(self, out_trade_no, trade_no=''):
         """
