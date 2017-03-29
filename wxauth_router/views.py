@@ -171,7 +171,6 @@ def make_order(request, appid):
         ), safe=False)
     app = AlipayApp.objects.filter(app_id=appid).first()
     if app:
-        args = dict()
         if request.GET.get('method', 'wap') == 'wap':
             args = app.make_order_wap(
                 subject=request.GET.get('subject'),
@@ -179,14 +178,16 @@ def make_order(request, appid):
                 total_amount=request.GET.get('total_amount'),
                 body=request.GET.get('body', ''),
             )
+            return HttpResponse(u.dict_to_url(args))
         elif request.GET.get('method') == 'app':
-            args = app.make_order_app(
+            paystr = app.make_order_app(
                 subject=request.GET.get('subject'),
                 out_trade_no=request.GET.get('out_trade_no'),
                 total_amount=request.GET.get('total_amount'),
                 body=request.GET.get('body', ''),
             )
-        return HttpResponse(u.dict_to_url(args))
+            return HttpResponse(paystr)
+        raise ValidationError('不支持的支付宝支付类型，请指定 ?method=wap 或 ?method=app')
     app = AlipayMapiApp.objects.filter(app_id=appid).first()
     if app:
         return HttpResponse(app.make_order_www_url(
