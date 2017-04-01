@@ -823,9 +823,7 @@ class WechatApp(PlatformApp):
                 result['code_url'] = order_data.get('code_url')
         elif self.trade_type == self.TRADE_TYPE_JSAPI:
             # 公众号 JSAPI 支付
-            from wechatpy.pay.api import WeChatJSAPI
-            api = WeChatJSAPI(self.get_wechat_client())
-            result = api.get_jsapi_params(prepay_id=order_data['prepay_id'])
+            result = self.wechat_pay().jsapi.get_jsapi_params(prepay_id=order_data['prepay_id'])
         else:
             raise ValidationError('不支持的 trade_type: ' + self.trade_type)
         return result
