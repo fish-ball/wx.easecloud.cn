@@ -216,6 +216,14 @@ def make_order(request, appid):
             from_currency=request.GET.get('from_currency', 'CNY'),
             to_currency=request.GET.get('to_currency', 'USD'),
         ))
+    app = CmbPayApp.objects.filter(app_id=appid).first()
+    if app:
+        return HttpResponse(app.make_order(
+            out_trade_no=request.GET.get('out_trade_no'),
+            total_amount=request.GET.get('total_amount'),
+            agr_no=request.GET.get('agr_no'),
+            merchant_serial_no=request.GET.get('merchant_serial_no'),
+        ))
     return HttpResponse('APPID未注册', status=400)
 
 

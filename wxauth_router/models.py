@@ -301,6 +301,87 @@ class PayPalApp(PlatformApp):
         raise ValidationError(payment.error)
 
 
+class CmbPayApp(PlatformApp):
+    """ 招行一网通支付
+    APPID: branchNo-merchantNo，例如 0757-000002
+    APPSecret 为商户秘钥
+    """
+
+    is_sandbox = models.BooleanField(
+        verbose_name='是否沙箱环境',
+        default=False,
+    )
+
+    class Meta:
+        verbose_name = '招行一网通APP'
+        verbose_name_plural = '招行一网通APP'
+        db_table = 'wxauth_cmbpay_app'
+
+    def branch_no(self):
+        return self.app_id.split('-')[0]
+
+    def merchant_no(self):
+        return self.app_id.split('-')[-1]
+
+    def make_req_data(self, out_trade_no, total_amount, agr_no, merchant_serial_no):
+        """
+        http://127.0.0.1:8000/make_order/0757-000002/?out_trade_no=9999000001&merchant_serial_no=20160804143807&total_amount=0.01&agr_no=64656
+        jsonRequestData={"reqData":{"payNoticePara":"","expireTimeSpan":"","merchantNo":"000002","signNoticePara":"","userID":"","clientIP":"","merchantSerialNo":"20160804143807","returnUrl":"http://app.hwc.easecloud.cn/api/payment_record/notify/","mobile":"","agrNo":"64656","lon":"","merchantCssUrl":"","merchantBridgeName":"","date":"20170412","riskLevel":"","branchNo":"0757","dateTime":"20170412000403","orderNo":"9999000001","cardType":"","signNoticeUrl":"http://app.hwc.easecloud.cn/api/payment_record/notify/","amount":"0.01","lat":"","payNoticeUrl":"http://app.hwc.easecloud.cn/api/payment_record/notify/"},"version":"1.0","sign":"f5b3c1da0432ae16f6fcc8f1188ef3038cbe1088dfc679c7f1f278ec9036094f","signType":"SHA-256","charset":"UTF-8"}
+        :param out_trade_no:
+        :param total_amount:
+        :param agr_no:
+        :param merchant_serial_no:
+        :return:
+        """
+        return dict(
+            dateTime=datetime.now().strftime('%Y%m%d%H%M%S'),
+            branchNo=self.branch_no(),
+            merchantNo=self.merchant_no(),
+            date=datetime.now().strftime('%Y%m%d'),
+            orderNo='{:010d}'.format(int(out_trade_no)),
+            amount=total_amount,
+            expireTimeSpan='',
+            payNoticeUrl=self.notify_url,  # 支付通知
+            payNoticePara='',
+            returnUrl=self.return_url,
+            clientIP='',
+            cardType='',
+            agrNo=agr_no,  # 协议号 例如 46587
+            merchantSerialNo=merchant_serial_no,  # 协议开通请求流水号 例如 2016062014308888
+            userID='',
+            mobile='',
+            lon='',
+            lat='',
+            riskLevel='',
+            signNoticeUrl=self.notify_url,  # 签约通知
+            signNoticePara='',
+            merchantCssUrl='',
+            merchantBridgeName='',
+        )
+
+    def sign_args(self, req_data):
+        print(req_data)
+        str_to_sign = \
+            '&'.join(['='.join(item) for item in sorted(req_data.items())]) + \
+            '&' + self.app_secret
+        from hashlib import sha256
+        return sha256(str_to_sign.encode('utf-8')).hexdigest()
+
+    def make_order(self, out_trade_no, total_amount, agr_no, merchant_serial_no):
+        req_data = self.make_req_data(
+            out_trade_no, total_amount, agr_no, merchant_serial_no)
+
+        data = dict(
+            version='1.0',
+            charset='UTF-8',
+            sign=self.sign_args(req_data),
+            signType='SHA-256',
+            reqData=req_data,
+        )
+
+        return 'jsonRequestData=' + json.dumps(data, separators=(',', ':')),
+
+
 class AlipayMapiApp(PlatformApp):
     """
     支付宝旧版支付接口（MAPI）产品
