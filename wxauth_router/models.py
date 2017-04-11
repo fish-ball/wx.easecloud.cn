@@ -325,8 +325,12 @@ class CmbPayApp(PlatformApp):
 
     def make_req_data(self, out_trade_no, total_amount, agr_no, merchant_serial_no):
         """
+        [example request]
         http://127.0.0.1:8000/make_order/0757-000002/?out_trade_no=9999000001&merchant_serial_no=20160804143807&total_amount=0.01&agr_no=64656
+        [example payload] - output
         jsonRequestData={"reqData":{"payNoticePara":"","expireTimeSpan":"","merchantNo":"000002","signNoticePara":"","userID":"","clientIP":"","merchantSerialNo":"20160804143807","returnUrl":"http://app.hwc.easecloud.cn/api/payment_record/notify/","mobile":"","agrNo":"64656","lon":"","merchantCssUrl":"","merchantBridgeName":"","date":"20170412","riskLevel":"","branchNo":"0757","dateTime":"20170412000403","orderNo":"9999000001","cardType":"","signNoticeUrl":"http://app.hwc.easecloud.cn/api/payment_record/notify/","amount":"0.01","lat":"","payNoticeUrl":"http://app.hwc.easecloud.cn/api/payment_record/notify/"},"version":"1.0","sign":"f5b3c1da0432ae16f6fcc8f1188ef3038cbe1088dfc679c7f1f278ec9036094f","signType":"SHA-256","charset":"UTF-8"}
+        [sandbox gateway]
+        http://121.15.180.66:801/netpayment/BaseHttp.dll?MB_EUserPay
         :param out_trade_no:
         :param total_amount:
         :param agr_no:
@@ -360,7 +364,7 @@ class CmbPayApp(PlatformApp):
         )
 
     def sign_args(self, req_data):
-        print(req_data)
+        # print(req_data)
         str_to_sign = \
             '&'.join(['='.join(item) for item in sorted(req_data.items())]) + \
             '&' + self.app_secret
