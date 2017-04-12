@@ -891,23 +891,40 @@ class WechatApp(PlatformApp):
         assert self.trade_type != self.TRADE_TYPE_NATIVE or product_id, \
             'NATIVE 调起下单必须提供 product_id'
         wechat_order = pay.api.WeChatOrder(self.wechat_pay())
-        order_data = wechat_order.create(
-            trade_type=self.trade_type,
-            body=body,
-            total_fee=total_fee,
-            notify_url=self.notify_url,
-            user_id=user_id,
-            product_id=product_id,
-            out_trade_no=out_trade_no,
-        )
-        if self.trade_type in (self.TRADE_TYPE_APP, self.TRADE_TYPE_NATIVE):
-            # 扫码和 app 支付
+        if self.trade_type == self.TRADE_TYPE_APP:
+            # APP 支付
+            order_data = wechat_order.create(
+                trade_type=self.trade_type,
+                body=body,
+                total_fee=total_fee,
+                notify_url=self.notify_url,
+                out_trade_no=out_trade_no,
+            )
             result = wechat_order.get_appapi_params(order_data['prepay_id'])
-            if self.trade_type == self.TRADE_TYPE_NATIVE:
-                # 扫码支付的跳转链接
-                result['code_url'] = order_data.get('code_url')
+        elif self.trade_type == self.TRADE_TYPE_NATIVE:
+            # 扫码支付
+            order_data = wechat_order.create(
+                trade_type=self.trade_type,
+                body=body,
+                total_fee=total_fee,
+                notify_url=self.notify_url,
+                product_id=product_id,
+                out_trade_no=out_trade_no,
+            )
+            result = wechat_order.get_appapi_params(order_data['prepay_id'])
+            # 扫码支付的跳转链接
+            result['code_url'] = order_data.get('code_url')
         elif self.trade_type == self.TRADE_TYPE_JSAPI:
             # 公众号 JSAPI 支付
+            # 扫码支付
+            order_data = wechat_order.create(
+                trade_type=self.trade_type,
+                body=body,
+                user_id=user_id,
+                notify_url=self.notify_url,
+                total_fee=total_fee,
+                out_trade_no=out_trade_no,
+            )
             result = self.wechat_pay().jsapi.get_jsapi_params(prepay_id=order_data['prepay_id'])
         else:
             raise ValidationError('不支持的 trade_type: ' + self.trade_type)
