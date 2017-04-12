@@ -383,7 +383,8 @@ class CmbPayApp(PlatformApp):
             reqData=req_data,
         )
 
-        return 'jsonRequestData=' + json.dumps(data, separators=(',', ':')),
+        from urllib.parse import quote_plus
+        return quote_plus(json.dumps(data, separators=(',', ':')))
 
 
 class AlipayMapiApp(PlatformApp):
