@@ -800,6 +800,14 @@ class WechatApp(PlatformApp):
         default='',
     )
 
+    withdraw_app = models.ForeignKey(
+        verbose_name='提现关联公众号',
+        to='self',
+        related_name='wxapp',
+        blank=True,
+        null=True,
+    )
+
     # access_token = models.CharField(
     #     verbose_name='Access Token',
     #     max_length=255,
@@ -931,6 +939,13 @@ class WechatApp(PlatformApp):
             raise ValidationError('不支持的 trade_type: ' + self.trade_type)
         return result
 
+    # def make_transfer(self, openid, amount):
+    #     app = self.parent
+    #     pay = app.wechat_pay()
+    #     amount = int(amount)
+    #     result = pay.transfer.transfer(openid, amount, '提现', check_name='NO_CHECK')
+    #     return result
+
     def query_order(self, out_trade_no, trade_no=''):
         """
         查询订单，
@@ -1046,20 +1061,6 @@ class WechatApp(PlatformApp):
         # TODO: 查询微信服务器主动获取订单信息
         pass
 
-    def get_wx_signature(self,
-                         method='sha1',
-                         timestamp='',
-                         nonceStr='',
-                         ticket='',
-                         request_url=''):
-        """
-        根据时间戳和随机字符串生成签名
-        :param method:
-        :return:
-        """
-
-        return 'gg'
-
     def generate_nonce_str(self, length=16):
         """
         默认获取一个长度为16的随机字符串
@@ -1127,6 +1128,24 @@ class WechatApp(PlatformApp):
                 'chooseCard',
                 'openCard'
             ],
+        )
+
+    def make_withdraw_ticket(self, code, amount,
+                             expires=timedelta(days=30)):
+        """
+        产生一条新的待审提现记录
+        :param code: 从
+        :param amount: 提现的金额，单位是分
+        :param expires: 传入一个有效时间区间，默认是30天
+        :return:
+        """
+        import time
+        import uuid
+        return WechatWithdrawTicket.objects.create(
+            key=uuid.uuid4().hex,
+            user=self.get_sns_user(code),
+            amount=amount,
+            expires=int(time.time()) + expires.seconds,
         )
 
 
@@ -1411,6 +1430,9 @@ class WechatUser(models.Model):
         # 将头像的 url 串接上当前的 domain
         avatar_url = urljoin(request and request.get_raw_uri() or 'http://wx.easecloud.cn', self.avatar_url())
         result['avatar'] = avatar_url
+        # 计算关联的支付收款用户 openid
+        withdraw_user = self.get_withdraw_user()
+        result['payment_user_openid'] = withdraw_user and withdraw_user.openid
         return result
 
     def avatar_url(self):
@@ -1484,6 +1506,144 @@ class WechatUser(models.Model):
         # 保存头像图
         self.update_avatar(data.get('headimgurl'))
 
+    def get_withdraw_user(self):
+        # 返回当前APP的提现用户对象
+        # 如果APP有指定提现使用的微信APP，返回这个提现APP下 union_id 相同的用户
+        # 否则，返回 union_id 相同的公众号APP用户
+        return self.app.withdraw_app.users.filter(
+            unionid=self.unionid
+        ).first() or WechatUser.objects.filter(
+            unionid=self.unionid,
+            app__type=WechatApp.TYPE_BIZ
+        ).first()
+
+
+class WechatWithdrawTicket(models.Model):
+    """ 提现票据
+    有一个有效期，记录了对应的提现用户以及提现金额
+    审批提现需要有 APP_SECRET 的参与签名
+    """
+    key = models.CharField(
+        verbose_name='令牌值',
+        max_length=32,
+    )
+
+    user = models.ForeignKey(
+        verbose_name='提现用户',
+        to='WechatUser',
+        related_name='withdraw_tickets',
+    )
+
+    expires = models.IntegerField(
+        verbose_name='超时时间',
+    )
+
+    amount = models.IntegerField(
+        verbose_name='提现金额',
+        help_text='单位：分',
+    )
+
+    # order_id = models.DateTimeField(
+    #     verbose_name='提现单号',
+    # )
+    #
+
+    STATUS_PENDING = 'PENDING'
+    STATUS_SUCCESS = 'SUCCESS'
+    STATUS_FAIL = 'FAIL'
+    STATUS_REJECTED = 'REJECTED'
+    STATUS_CHOICES = (
+        (STATUS_PENDING, '申请中'),
+        (STATUS_SUCCESS, '成功'),
+        (STATUS_FAIL, '失败'),
+        (STATUS_REJECTED, '驳回'),
+    )
+
+    status = models.TextField(
+        verbose_name='提现状态',
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+    )
+    #
+    # result = models.TextField(
+    #     verbose_name='提现结果对象'
+    # )
+    #
+    # date_approve = models.DateTimeField(
+    #     verbose_name='审批时间',
+    #     blank=True,
+    #     null=True,
+    # )
+
+    def __str__(self):
+        return self.key
+
+    @classmethod
+    def make(cls, user, amount):
+        import time, uuid
+        return cls.objects.create(
+            key=uuid.uuid4().hex,
+            user=user,
+            amount=amount,
+            expires=int(time.time()) + 60*60*24*7,  # 7天内有效
+        )
+
+    def make_sign(self):
+        """ 生成当前提现票据的签名
+        规则：MD5('<APPID>&<APP_SECRET>&<OPENID>&<AMOUNT>&<KEY>')
+        :return:
+        """
+        from hashlib import md5
+        wxuser = WechatUser.objects.get(
+            app=self.user.app.withdraw_app,
+            unionid=self.user.unionid
+        )
+        return md5('{}&{}&{}&{}&{}'.format(
+            self.user.app.app_id,
+            self.user.app.app_secret,
+            wxuser.openid,
+            self.amount,
+            self.key
+        ).encode()).hexdigest().upper()
+
+    def apply(self, sign, approve=True):
+        """
+        执行一个提现
+        :param key:
+        :param approve: 执行提现传入 True，拒绝提现返回
+        :return: 是否处理成功（仅当远端提现请求处理失败时返回失败）
+        """
+        assert sign == self.make_sign(), '签名不正确'
+        assert self.status == self.STATUS_PENDING, '状态不正确'
+        import time
+        assert time.time() < self.expires, '提现请求已超时'
+
+        if not approve:
+            self.status = self.STATUS_REJECTED
+            self.save()
+            return True
+
+        # 执行提现并登记结果
+        app = self.user.app.withdraw_app
+        pay = app.wechat_pay()
+        wxuser = WechatUser.objects.get(app=app, unionid=self.user.unionid)
+        try:
+            pay.transfer.transfer(
+                wxuser.openid,
+                self.amount,
+                '提现 {} 元'.format(self.amount/100),
+                check_name='NO_CHECK',
+            )
+            self.status = self.STATUS_SUCCESS
+            self.save()
+            return True
+        except Exception as e:
+            return False
+
+    class Meta:
+        verbose_name = '提现票据'
+        db_table = 'wxauth_wechat_withdraw_ticket'
+
 
 class ResultTicket(models.Model):
     """ 结果令牌
@@ -1507,6 +1667,7 @@ class ResultTicket(models.Model):
 
     class Meta:
         verbose_name = '结果令牌'
+        db_table = 'wxauth_result_ticket'
 
     @classmethod
     def make(cls, user):

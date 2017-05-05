@@ -24,6 +24,8 @@ import wxauth_router.views
 urlpatterns = [
     url(r'^$', wxauth_router.views.index),
     url(r'^make_order/(?P<appid>.+)/$', wxauth_router.views.make_order),
+    url(r'^make_wechat_withdraw_ticket/(?P<appid>.+)/(?P<code>.+)/$', wxauth_router.views.make_wechat_withdraw_ticket),
+    url(r'^apply_wechat_withdraw/(?P<withdraw_key>.+)/(?P<sign>.+)/$', wxauth_router.views.apply_wechat_withdraw),
     # url(r'^make_order_form/(?P<appid>.+)/$', wxauth_router.views.make_order_form),
     url(r'^notify/(?P<appid>.+)/$', wxauth_router.views.notify),
     url(r'^query_order/(?P<appid>.+)/$', wxauth_router.views.query_order),
@@ -34,11 +36,11 @@ urlpatterns = [
     url(r'^ticket/(?P<key>.+)/$', wxauth_router.views.ticket),
     url(r'^wx_jssdk/(?P<appid>.+)/$', wxauth_router.views.wx_jssdk),
     url(r'^wx_jssdk_script/(?P<appid>.+)/$', wxauth_router.views.wx_jssdk_script),
-    # url(r'^user/(?P<key>.+)/$', wxauth_router.views.ticket),
+    url(r'^user/(?P<appid>.+)/(?P<unionid>.+)/$', wxauth_router.views.user),
     url(r'^preview/$', wxauth_router.views.preview),
     url(r'^MP_verify_(?P<key>.+)\.txt$', wxauth_router.views.verify_key),
     url(r'^admin/', admin.site.urls),
-    url(r'^paypal/', include('paypal.standard.ipn.urls', namespace='paypal')),
+    # url(r'^paypal/', include('paypal.standard.ipn.urls', namespace='paypal')),
 ]
 
 if settings.DEBUG:

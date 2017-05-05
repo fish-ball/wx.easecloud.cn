@@ -53,8 +53,11 @@ def index(request):
 
     # 微信公众号
     app = WechatApp.objects.filter(
-        models.Q(app_id=oauth_app_id) |
-        models.Q(domain=request.get_host())
+        models.Q(
+            models.Q(app_id=oauth_app_id) |
+            models.Q(domain=request.get_host())
+        ),
+        type=WechatApp.TYPE_BIZ,
     ).first()
 
     if app:
@@ -114,16 +117,19 @@ def index(request):
     return redirect('/admin')
 
 
-# def user(request, openid):
-#     """ 提供查询接口，让客户拿到 openid 之后查询用户的信息
-#     """
-#     wxuser = WechatUser.objects.filter(openid=openid).first()
-#
-#     if not wxuser:
-#         return HttpResponseNotFound()
-#
-#     from django.forms.models import model_to_dict
-#     return HttpResponse(json.dumps(model_to_dict(wxuser)))
+def user(request, appid, unionid):
+    """ 提供查询接口，让客户拿到 openid 之后查询用户的信息
+    """
+
+    app = WechatApp.objects.get(app_id=appid).withdraw_app
+
+    wxuser = WechatUser.objects.get(
+        unionid=unionid, app=app)
+
+    if not wxuser:
+        return HttpResponse(status=404)
+
+    return HttpResponse(json.dumps(wxuser.serialize()))
 
 
 def ticket(request, key):
@@ -225,6 +231,54 @@ def make_order(request, appid):
             merchant_serial_no=request.GET.get('merchant_serial_no'),
         ))
     return HttpResponse('APPID未注册', status=400)
+
+
+def make_wechat_withdraw_ticket(request, appid, code):
+    """
+    :param appid:
+    :param code: 微信 OAuth 获取的 code
+    :return:
+    """
+    # 微信APP
+    app = WechatApp.objects.get(
+        app_id=appid,
+        type=WechatApp.TYPE_APP,
+    )
+
+    wxuser = app.get_sns_user(code)
+    if not wxuser:
+        return HttpResponseBadRequest('获取用户信息失败，详细错误信息请查看错误日志')
+
+    # 前端应用调起申请一个待审提现单，获取单号并且提交到应用后台
+    return JsonResponse(dict(key=WechatWithdrawTicket.make(
+        wxuser,
+        # ... 金额等
+        request.GET.get('amount'),
+    ).key))
+
+
+def apply_wechat_withdraw(request, withdraw_key, sign):
+    """ 应用后台审批发放一条提现记录，因为需要签名，务必在应用后台调起
+    :param request:
+    :param withdraw_key:
+    :param sign: MD5('<APPID>&<APP_SECRET>&<OPENID>&<AMOUNT>&<KEY>')
+    :return:
+    """
+    assert 'reject' not in request.GET or \
+           request.GET.get('reject') != '1', \
+        'GET["reject"]参数只能不填或填写 1'
+    withdraw_ticket = WechatWithdrawTicket.objects.get(key=withdraw_key)
+    success = withdraw_ticket.apply(
+        sign=sign,
+        approve=request.GET.get('reject') != '1'
+    )
+    return JsonResponse(dict(
+        result='OK',
+        msg='处理成功',
+    )) if success else JsonResponse(dict(
+        result='FAIL',
+        msg='处理失败：' + str(),
+    ))
 
 
 @csrf_exempt
