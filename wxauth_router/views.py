@@ -88,7 +88,10 @@ def index(request):
 
         wxuser = app.get_sns_user(code)
         if not wxuser:
-            return HttpResponseBadRequest('获取用户信息失败，详细错误信息请查看错误日志')
+            return HttpResponseBadRequest(
+                ('获取用户信息失败，详细错误信息请查看错误日志' +
+                 'code: {}, appid: {}').format(code, oauth_app_id)
+            )
 
         # 第四步：根据 state 值进行跳转
         # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
