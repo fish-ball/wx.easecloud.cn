@@ -1510,11 +1510,9 @@ class WechatUser(models.Model):
         # 返回当前APP的提现用户对象
         # 如果APP有指定提现使用的微信APP，返回这个提现APP下 union_id 相同的用户
         # 否则，返回 union_id 相同的公众号APP用户
-        return self.app.withdraw_app.users.filter(
-            unionid=self.unionid
-        ).first() or WechatUser.objects.filter(
+        return WechatUser.objects.filter(
             unionid=self.unionid,
-            app__type=WechatApp.TYPE_BIZ
+            app=self.app.withdraw_app
         ).first()
 
 
