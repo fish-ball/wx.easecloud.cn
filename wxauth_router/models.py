@@ -344,23 +344,23 @@ class CmbPayApp(PlatformApp):
             date=datetime.now().strftime('%Y%m%d'),
             orderNo='{:010d}'.format(int(out_trade_no)),
             amount=total_amount,
-            expireTimeSpan='',
+            # expireTimeSpan='30',
             payNoticeUrl=self.notify_url,  # 支付通知
-            payNoticePara='',
-            returnUrl=self.return_url,
-            clientIP='',
-            cardType='',
+            # payNoticePara='',
+            # returnUrl=self.return_url,
+            # clientIP='',
+            # cardType='',
             agrNo=agr_no,  # 协议号 例如 46587
             merchantSerialNo=merchant_serial_no,  # 协议开通请求流水号 例如 2016062014308888
-            userID='',
-            mobile='',
-            lon='',
-            lat='',
-            riskLevel='',
+            # userID=agr_no,
+            # mobile='',
+            # lon='',
+            # lat='',
+            # riskLevel='',
             signNoticeUrl=self.notify_url,  # 签约通知
-            signNoticePara='',
-            merchantCssUrl='',
-            merchantBridgeName='',
+            # signNoticePara='',
+            # merchantCssUrl='',
+            # merchantBridgeName='',
         )
 
     def sign_args(self, req_data):
