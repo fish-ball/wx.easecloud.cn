@@ -181,6 +181,7 @@ def wechat_demo_order(request, appid):
             out_trade_no=out_trade_no,
             user_id=openid,
         )
+        print(data)
         return HttpResponse("""
         <script src="/wx_jssdk_script/{}/"/>
         <script>
