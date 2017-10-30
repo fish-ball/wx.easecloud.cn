@@ -182,6 +182,7 @@ def wechat_demo_order(request, appid):
             user_id=openid,
         )
         print(type(data))
+        print(json.dumps(data))
         return HttpResponse((
             '<script src="/wx_jssdk_script/{}/"/>'
             '<script>'
