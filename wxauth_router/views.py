@@ -167,20 +167,17 @@ def verify_key(request, key):
 
 
 def wechat_demo_order(request, appid):
-    from urllib.request import urlopen
     from hashlib import md5
     from random import random
+    app = WechatApp.objects.filter(app_id=appid).first()
     out_trade_no = md5(str(random()).encode()).hexdigest()
-    resp = urlopen(
-        'http://127.0.0.1:8000/make_order/' + appid + '/' +
-        '?out_trade_no=' + out_trade_no +
-        '&trade_type=NATIVE'
-        '&product_id=1'
-        '&body=%E4%B8%9A%E5%8A%A1%E5%92%A8%E8%AF%A2'
-        '&total_fee=1'
+    app.trade_type = 'NATIVE'
+    data = app.make_order(
+        body='业务购买',
+        total_fee=1,
+        out_trade_no=out_trade_no,
+        product_id=1
     )
-    data = json.loads(resp.read().decode())
-    # return redirect(data.get('code_url'))
     return HttpResponse('<a href="{}">{}</a>'.format(
         data.get('code_url'),
         data.get('code_url')
