@@ -178,9 +178,14 @@ def wechat_demo_order(request, appid):
         out_trade_no=out_trade_no,
         product_id=1
     )
-    response = HttpResponse("", status=302)
-    response['Location'] = data.get('code_url')
-    return response
+    # response = HttpResponse("", status=302)
+    # response['Location'] = data.get('code_url')
+    # return response
+
+    return HttpResponse('<a href="{}"><img src="http://qr.liantu.com/api.php?text={}"/></a>'.format(
+        data.get('code_url'),
+        data.get('code_url')
+    ))
 
 
 def make_order(request, appid):
