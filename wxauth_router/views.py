@@ -181,7 +181,7 @@ def wechat_demo_order(request, appid):
             out_trade_no=out_trade_no,
             user_id=openid,
         )
-        print(data)
+        print(type(data))
         return HttpResponse("""
         <script src="/wx_jssdk_script/{}/"/>
         <script>
@@ -192,8 +192,8 @@ def wechat_demo_order(request, appid):
         {}
         """.format(
             appid,
-            json.dumps(data),
-            json.dumps(data),
+            data,
+            data,
         ))
     else:
         data = app.make_order(
