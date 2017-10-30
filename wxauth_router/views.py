@@ -178,10 +178,9 @@ def wechat_demo_order(request, appid):
         out_trade_no=out_trade_no,
         product_id=1
     )
-    return HttpResponse('<a href="{}">{}</a>'.format(
-        data.get('code_url'),
-        data.get('code_url')
-    ))
+    response = HttpResponse("", status=302)
+    response['Location'] = data.get('code_url')
+    return response
 
 
 def make_order(request, appid):
