@@ -171,7 +171,6 @@ def wechat_demo_order(request, appid):
     from random import random
     app = WechatApp.objects.filter(app_id=appid).first()
     out_trade_no = md5(str(random()).encode()).hexdigest()
-    app.trade_type = 'NATIVE'
     ticket = request.GET.get('ticket')
     if ticket:
         wxuser = ResultTicket.fetch_user(ticket)
