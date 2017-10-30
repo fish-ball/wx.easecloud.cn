@@ -182,15 +182,15 @@ def wechat_demo_order(request, appid):
             user_id=openid,
         )
         print(type(data))
-        return HttpResponse("""
-        <script src="/wx_jssdk_script/{}/"/>
-        <script>
-        wx.ready(function() {
-            wx.chooseWXPay({});
-        });
-        </script>
-        {}
-        """.format(
+        return HttpResponse((
+            '<script src="/wx_jssdk_script/{}/"/>'
+            '<script>'
+            'wx.ready(function() {'
+            '    wx.chooseWXPay({});'
+            '});'
+            '</script>'
+            '{}'
+        ).format(
             appid,
             data,
             data,
