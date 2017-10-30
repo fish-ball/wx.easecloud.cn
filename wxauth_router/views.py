@@ -180,7 +180,10 @@ def wechat_demo_order(request, appid):
         '&total_fee=1'
     )
     data = json.loads(resp.read().decode())
-    return redirect(data.get('code_url'))
+    return HttpResponse('<a href="{}">{}</a>'.format(
+        data.get('code_url'),
+        data.get('code_url')
+    ))
 
 
 def make_order(request, appid):
