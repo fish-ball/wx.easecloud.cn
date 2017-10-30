@@ -23,6 +23,7 @@ import wxauth_router.views
 
 urlpatterns = [
     url(r'^$', wxauth_router.views.index),
+    url(r'^wechat_demo_order/(?P<appid>.+)/$', wxauth_router.views.wechat_demo_order),
     url(r'^make_order/(?P<appid>.+)/$', wxauth_router.views.make_order),
     url(r'^make_wechat_withdraw_ticket/(?P<appid>.+)/(?P<code>.+)/$', wxauth_router.views.make_wechat_withdraw_ticket),
     url(r'^apply_wechat_withdraw/(?P<withdraw_key>.+)/(?P<sign>.+)/$', wxauth_router.views.apply_wechat_withdraw),

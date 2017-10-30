@@ -166,6 +166,23 @@ def verify_key(request, key):
     return HttpResponse(key)
 
 
+def wechat_demo_order(request, appid):
+    from urllib.request import urlopen
+    from hashlib import md5
+    from random import random
+    out_trade_no = md5(str(random()).encode()).hexdigest()
+    resp = urlopen(
+        'http://wx.easecloud.cn/make_order/' + appid + '/' +
+        '?out_trade_no=' + out_trade_no +
+        '&trade_type=NATIVE'
+        '&product_id=1'
+        '&body=%E4%B8%9A%E5%8A%A1%E5%92%A8%E8%AF%A2'
+        '&total_fee=1'
+    )
+    data = json.loads(resp.read().decode())
+    return redirect(data.get('code_url'))
+
+
 def make_order(request, appid):
     app = WechatApp.objects.filter(app_id=appid).first()
     if app:
