@@ -172,9 +172,10 @@ def wechat_demo_order(request, appid):
     app = WechatApp.objects.filter(app_id=appid).first()
     out_trade_no = md5(str(random()).encode()).hexdigest()
     app.trade_type = 'NATIVE'
-    if request.GET.get('ticket'):
-        resp = urlopen('http://wx.easecloud.cn/ticket/{}/'.format(request.GET.get('ticket')))
-        openid = json.loads(resp.read().decode()).get('openid')
+    ticket = request.GET.get('ticket')
+    if ticket:
+        wxuser = ResultTicket.fetch_user(ticket)
+        openid = wxuser.openid
         data = app.make_order(
             body='业务购买',
             total_fee=1,
@@ -182,7 +183,6 @@ def wechat_demo_order(request, appid):
             user_id=openid,
         )
         return HttpResponse("""
-        <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"/>
         <script src="/wx_jssdk_script/{}/"/>
         <script>
         wx.ready(function() {
