@@ -194,6 +194,7 @@ def wechat_demo_order(request, appid):
         data = app.make_order(
             body='业务购买',
             total_fee=1,
+            trade_type='NATIVE',
             out_trade_no=out_trade_no,
             product_id=1,
         )
