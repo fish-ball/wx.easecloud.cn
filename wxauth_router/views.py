@@ -172,7 +172,7 @@ def wechat_demo_order(request, appid):
     from random import random
     out_trade_no = md5(str(random()).encode()).hexdigest()
     resp = urlopen(
-        'http://wx.easecloud.cn/make_order/' + appid + '/' +
+        'http://127.0.0.1:8000/make_order/' + appid + '/' +
         '?out_trade_no=' + out_trade_no +
         '&trade_type=NATIVE'
         '&product_id=1'
@@ -180,6 +180,7 @@ def wechat_demo_order(request, appid):
         '&total_fee=1'
     )
     data = json.loads(resp.read().decode())
+    # return redirect(data.get('code_url'))
     return HttpResponse('<a href="{}">{}</a>'.format(
         data.get('code_url'),
         data.get('code_url')
