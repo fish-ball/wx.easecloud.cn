@@ -172,20 +172,39 @@ def wechat_demo_order(request, appid):
     app = WechatApp.objects.filter(app_id=appid).first()
     out_trade_no = md5(str(random()).encode()).hexdigest()
     app.trade_type = 'NATIVE'
-    data = app.make_order(
-        body='业务购买',
-        total_fee=1,
-        out_trade_no=out_trade_no,
-        product_id=1
-    )
-    # response = HttpResponse("", status=302)
-    # response['Location'] = data.get('code_url')
-    # return response
-
-    return HttpResponse('<a href="{}"><img src="http://qr.liantu.com/api.php?text={}"/></a>'.format(
-        data.get('code_url'),
-        data.get('code_url')
-    ))
+    if request.GET.get('ticket'):
+        resp = urlopen('http://wx.easecloud.cn/ticket/{}/'.format(request.GET.get('ticket')))
+        openid = json.loads(resp.read().decode()).get('openid')
+        data = app.make_order(
+            body='业务购买',
+            total_fee=1,
+            out_trade_no=out_trade_no,
+            user_id=openid,
+        )
+        return HttpResponse("""
+        <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"/>
+        <script src="/wx_jssdk_script/{}/"/>
+        <script>
+        wx.ready(function() {
+            wx.chooseWXPay({});
+        });
+        </script>
+        {}
+        """.format(
+            appid,
+            json.dumps(data),
+            json.dumps(data),
+        ))
+    else:
+        data = app.make_order(
+            body='业务购买',
+            total_fee=1,
+            out_trade_no=out_trade_no,
+            product_id=1,
+        )
+        response = HttpResponse("", status=302)
+        response['Location'] = data.get('code_url')
+        return response
 
 
 def make_order(request, appid):
