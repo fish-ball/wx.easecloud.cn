@@ -181,21 +181,16 @@ def wechat_demo_order(request, appid):
             out_trade_no=out_trade_no,
             user_id=openid,
         )
-        print(type(data))
-        print(json.dumps(data))
-        return HttpResponse((
-            '<script src="/wx_jssdk_script/{}/"/>'
+        data = json.dumps(data)
+        return HttpResponse(
+            '<script src="/wx_jssdk_script/' + appid + '/"/>' +
             '<script>'
             'wx.ready(function() {'
-            '    wx.chooseWXPay({});'
+            '    wx.chooseWXPay(' + data + ');' +
             '});'
             '</script>'
             '{}'
-        ).format(
-            appid,
-            data,
-            data,
-        ))
+        )
     else:
         data = app.make_order(
             body='业务购买',
