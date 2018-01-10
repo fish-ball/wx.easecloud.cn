@@ -1019,7 +1019,7 @@ class WechatApp(PlatformApp):
             from urllib.request import urlopen
             resp = urlopen(url)
             data = json.loads(resp.read().decode())
-            assert data.get('access_token'), '获取 access token 失败'
+            assert data.get('access_token'), '获取 access token 失败，{}'.format(json.dumps(data))
             access_token = data.get('access_token')
             # expires_in = data.get('expires_in')
             # refresh_token = data.get('refresh_token')
