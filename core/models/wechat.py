@@ -643,7 +643,7 @@ class WechatUser(models.Model):
     def serialize(self):
         from django.forms.models import model_to_dict
         from urllib.parse import urljoin
-        from .middleware import get_request
+        from ..middleware import get_request
         request = get_request()
         result = model_to_dict(self)
         # 将头像的 url 串接上当前的 domain
@@ -907,4 +907,3 @@ class ResultTicket(models.Model):
         cls.objects.filter(expires__lt=time.time()).delete()
         ticket = cls.objects.filter(key=key).first()
         return ticket and ticket.user
-
