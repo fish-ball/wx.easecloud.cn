@@ -161,6 +161,7 @@ class WechatApp(PlatformApp):
         :param request:
         :return:
         """
+        (print(k, v) for k, v in request.META.items())
         # 记录传入的 redirect_uri
         redirect_uri = request.POST.get('redirect_uri') or \
                        request.GET.get('redirect_uri') or \
@@ -226,20 +227,6 @@ class WechatApp(PlatformApp):
             mch_key=self.mch_key(),
         )
 
-    # def wechat_oauth(self, scope='snsapi_base', state=''):
-    #     """ 获取当前微信平台号的 wechatpy.oauth.WechatOAuth 实例
-    #     http://wechatpy.readthedocs.io/zh_CN/master/oauth.html#wechatpy.oauth.WeChatOAuth
-    #     :return:
-    #     """
-    #     from wechatpy import oauth
-    #     return oauth.WeChatOAuth(
-    #         app_id=self.app_id,
-    #         secret=self.app_secret,
-    #         redirect_uri=self.get_oauth_redirect_url(),
-    #         scope=scope,
-    #         state=state,
-    #     )
-
     def get_oauth_login_url(self, request=None):
         url = None
         if self.type == self.TYPE_BIZ:
@@ -257,7 +244,17 @@ class WechatApp(PlatformApp):
             )
         elif self.type == self.TYPE_WEB:
             # 微信开放平台：网站应用
-            url = self.wechat_oauth().authorize_url
+            url = (
+                'https://open.weixin.qq.com/connect/qrconnect'
+                '?appid={}'
+                '&redirect_uri={}'
+                '&response_type=code'
+                '&scope=snsapi_login'
+                '&state=#wechat_redirect'
+            ).format(
+                self.app_id,
+                self.get_oauth_redirect_url(request),
+            )
         else:
             raise ValidationError('微信APP仅支持公众号/网站应用获取OAuth授权地址')
         return url
