@@ -67,6 +67,7 @@ def sns_user(request, appid, code):
     :param code:
     :return:
     """
+    print(appid, code)
     app = WechatApp.objects.get(app_id=appid)
     if app:
         wxuser = app.get_sns_user(code)
