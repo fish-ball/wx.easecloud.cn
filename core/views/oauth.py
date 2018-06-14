@@ -19,7 +19,7 @@ def auth(request, appid):
     app = WechatApp.objects.filter(app_id=appid).first()
     if app:
         app.stage_oauth_redirect_info(request)
-        return redirect(app.get_oauth_login_url())
+        return redirect(app.get_oauth_login_url(request))
     return HttpResponseNotFound()
 
 

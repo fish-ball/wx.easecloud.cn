@@ -226,21 +226,21 @@ class WechatApp(PlatformApp):
             mch_key=self.mch_key(),
         )
 
-    def wechat_oauth(self, scope='snsapi_base', state=''):
-        """ 获取当前微信平台号的 wechatpy.oauth.WechatOAuth 实例
-        http://wechatpy.readthedocs.io/zh_CN/master/oauth.html#wechatpy.oauth.WeChatOAuth
-        :return:
-        """
-        from wechatpy import oauth
-        return oauth.WeChatOAuth(
-            app_id=self.app_id,
-            secret=self.app_secret,
-            redirect_uri=self.get_oauth_redirect_url(),
-            scope=scope,
-            state=state,
-        )
+    # def wechat_oauth(self, scope='snsapi_base', state=''):
+    #     """ 获取当前微信平台号的 wechatpy.oauth.WechatOAuth 实例
+    #     http://wechatpy.readthedocs.io/zh_CN/master/oauth.html#wechatpy.oauth.WeChatOAuth
+    #     :return:
+    #     """
+    #     from wechatpy import oauth
+    #     return oauth.WeChatOAuth(
+    #         app_id=self.app_id,
+    #         secret=self.app_secret,
+    #         redirect_uri=self.get_oauth_redirect_url(),
+    #         scope=scope,
+    #         state=state,
+    #     )
 
-    def get_oauth_login_url(self):
+    def get_oauth_login_url(self, request=None):
         url = None
         if self.type == self.TYPE_BIZ:
             # 微信公众号
@@ -253,7 +253,7 @@ class WechatApp(PlatformApp):
                 '&state=#wechat_redirect'
             ).format(
                 self.app_id,
-                self.get_oauth_redirect_url(),
+                self.get_oauth_redirect_url(request),
             )
         elif self.type == self.TYPE_WEB:
             # 微信开放平台：网站应用
