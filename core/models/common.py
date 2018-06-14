@@ -60,5 +60,5 @@ class PlatformApp(models.Model):
         from ..middleware import get_request
         from ..views.oauth import auth_callback
         from django.shortcuts import reverse
-        return self.oauth_redirect_url \
-               or urljoin(get_request().get_raw_uri(), reverse(auth_callback, kwargs=self.app_id))
+        return self.oauth_redirect_url or urljoin(
+            get_request().get_raw_uri(), reverse(auth_callback, kwargs=dict(appid=self.app_id)))
