@@ -82,7 +82,7 @@ $.getJSON('http://wx.easecloud.cn/ticket/'+ticket).then(function(user_info) {
 
 This api calls the wechat uniform ordering(统一下单) API:
 
-Ref: <https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=9_1>
+> Ref: <https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=9_1>
 
 First, you must create a Wechat APP order in the admin panel, which stores the
 `appid` and `appsecret`, `mch_id`, payment certificate strings,
@@ -102,6 +102,23 @@ For example:
 ```
 http://wx.easecloud.cn/make_order/wx6426cb0a36327b31/?body=%E6%88%91%E4%BB%AC&total_fee=1&out_trade_no=SH2017011412042182
 ```
+
+#### 3. Wechat Native QRCode OAuth
+
+This api generates a QRCode to make a Wechat OAuth Login.
+
+You should first generate a Website App in <open.weixin.qq.com> platform:
+
+> Ref: <https://open.weixin.qq.com/cgi-bin/frame?t=home/web_tmpl&lang=zh_CN>
+
+So you can get the following api permission:
+
++ Website App OAuth: <https://open.weixin.qq.com/cgi-bin/showdocument?action=dir_list&t=resource/res_list&verify=1&id=open1419316505&token=4c7f72fd7ce94007cfa8855ba7a1f6a943f16815&lang=zh_CN>
++ Relating wechatpy sdk: <http://wechatpy.readthedocs.io/zh_CN/master/oauth.html#module-wechatpy.oauth>
+
+##### Get the oauth link to make qrcode:
+
+
 
 ---
 

@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from . import models as m
 
 
@@ -13,20 +14,6 @@ class AlipayAppAdmin(admin.ModelAdmin):
 class WechatAppAdmin(admin.ModelAdmin):
     list_display = [
         'id', 'type', 'title', 'trade_type', 'app_id',
-    ]
-
-
-# @admin.register(m.WechatDomain)
-# class RequestTargetAdmin(admin.ModelAdmin):
-#     list_display = [
-#         'id', 'title', 'domain', 'app_id', 'verify_key',
-#     ]
-
-
-@admin.register(m.RequestTarget)
-class RequestTargetAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'url', 'key',
     ]
 
 

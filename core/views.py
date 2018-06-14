@@ -271,6 +271,9 @@ def apply_wechat_withdraw(request, withdraw_key, sign):
         msg='处理失败：' + str(),
     ))
 
+def get_wechat_native_oauth_url(request, appid):
+    pass
+
 
 @csrf_exempt
 def notify(request, appid):
