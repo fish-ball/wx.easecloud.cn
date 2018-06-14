@@ -26,36 +26,36 @@ urlpatterns = [
     url(r'^$', core.views.index),
 
     # OAuth
-    url(r'^auth/(?P<appid>.+)/$', core.views.oauth.auth),
-    url(r'^auth/(?P<appid>.+)/callback/$', core.views.oauth.auth_callback),
-    url(r'^sns_user/(?P<appid>.+)/(?P<code>.+)/$', core.views.oauth.sns_user),
-    url(r'^ticket/(?P<key>.+)/$', core.views.oauth.ticket),
-    url(r'^user/(?P<appid>.+)/(?P<user_id>.+)/$', core.views.oauth.user),
+    url(r'^auth/(?P<appid>[^/]+)/$', core.views.oauth.auth),
+    url(r'^auth/(?P<appid>[^/]+)/callback/$', core.views.oauth.auth_callback),
+    url(r'^sns_user/(?P<appid>[^/]+)/(?P<code>[^/])/$', core.views.oauth.sns_user),
+    url(r'^ticket/(?P<key>[^/]+)/$', core.views.oauth.ticket),
+    url(r'^user/(?P<appid>[^/]+)/(?P<user_id>[^/])/$', core.views.oauth.user),
 
     # 支付
-    url(r'^make_order/(?P<appid>.+)/$', core.views.make_order),
-    url(r'^notify/(?P<appid>.+)/$', core.views.notify),
-    url(r'^query_order/(?P<appid>.+)/$', core.views.query_order),
-    url(r'^verify_notify/(?P<appid>.+)/$', core.views.verify_notify),
-    url(r'^verify_return/(?P<appid>.+)/$', core.views.verify_return),
+    url(r'^make_order/(?P<appid>[^/])/$', core.views.make_order),
+    url(r'^notify/(?P<appid>[^/])/$', core.views.notify),
+    url(r'^query_order/(?P<appid>[^/])/$', core.views.query_order),
+    url(r'^verify_notify/(?P<appid>[^/])/$', core.views.verify_notify),
+    url(r'^verify_return/(?P<appid>[^/])/$', core.views.verify_return),
 
     # 提现
-    url(r'^make_wechat_withdraw_ticket/(?P<appid>.+)/(?P<code>.+)/$', core.views.make_wechat_withdraw_ticket),
-    url(r'^apply_wechat_withdraw/(?P<withdraw_key>.+)/(?P<sign>.+)/$', core.views.apply_wechat_withdraw),
+    url(r'^make_wechat_withdraw_ticket/(?P<appid>[^/])/(?P<code>[^/])/$', core.views.make_wechat_withdraw_ticket),
+    url(r'^apply_wechat_withdraw/(?P<withdraw_key>[^/])/(?P<sign>[^/])/$', core.views.apply_wechat_withdraw),
 
     # JSSDK
-    url(r'^wx_jssdk/(?P<appid>.+)/$', core.views.wx_jssdk),
-    url(r'^wx_jssdk_script/(?P<appid>.+)/$', core.views.wx_jssdk_script),
+    url(r'^wx_jssdk/(?P<appid>[^/])/$', core.views.wx_jssdk),
+    url(r'^wx_jssdk_script/(?P<appid>[^/])/$', core.views.wx_jssdk_script),
 
     # 文件认证
-    url(r'^MP_verify_(?P<key>.+)\.txt$', core.views.verify_key),
+    url(r'^MP_verify_(?P<key>[^/])\.txt$', core.views.verify_key),
 
     # 管理后台
     url(r'^admin/', admin.site.urls),
 
     # 调试用
     url(r'^preview/$', core.views.preview),
-    url(r'^wechat_demo_order/(?P<appid>.+)/$', core.views.wechat_demo_order),
+    url(r'^wechat_demo_order/(?P<appid>[^/])/$', core.views.wechat_demo_order),
 ]
 
 if settings.DEBUG:
