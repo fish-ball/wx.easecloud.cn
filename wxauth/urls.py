@@ -18,30 +18,29 @@ from django.contrib import admin
 from django.conf.urls.static import static
 from django.conf import settings
 
-import wxauth_router.views
+import core.views
 
 
 urlpatterns = [
-    url(r'^$', wxauth_router.views.index),
-    url(r'^wechat_demo_order/(?P<appid>.+)/$', wxauth_router.views.wechat_demo_order),
-    url(r'^make_order/(?P<appid>.+)/$', wxauth_router.views.make_order),
-    url(r'^make_wechat_withdraw_ticket/(?P<appid>.+)/(?P<code>.+)/$', wxauth_router.views.make_wechat_withdraw_ticket),
-    url(r'^apply_wechat_withdraw/(?P<withdraw_key>.+)/(?P<sign>.+)/$', wxauth_router.views.apply_wechat_withdraw),
-    # url(r'^make_order_form/(?P<appid>.+)/$', wxauth_router.views.make_order_form),
-    url(r'^notify/(?P<appid>.+)/$', wxauth_router.views.notify),
-    url(r'^query_order/(?P<appid>.+)/$', wxauth_router.views.query_order),
-    url(r'^verify_notify/(?P<appid>.+)/$', wxauth_router.views.verify_notify),
-    url(r'^verify_return/(?P<appid>.+)/$', wxauth_router.views.verify_return),
-    url(r'^sns_user/(?P<appid>.+)/(?P<code>.+)/$', wxauth_router.views.sns_user),
-    url(r'^auth/(?P<appid>.+)/$', wxauth_router.views.auth),
-    url(r'^ticket/(?P<key>.+)/$', wxauth_router.views.ticket),
-    url(r'^wx_jssdk/(?P<appid>.+)/$', wxauth_router.views.wx_jssdk),
-    url(r'^wx_jssdk_script/(?P<appid>.+)/$', wxauth_router.views.wx_jssdk_script),
-    url(r'^user/(?P<appid>.+)/(?P<unionid>.+)/$', wxauth_router.views.user),
-    url(r'^preview/$', wxauth_router.views.preview),
-    url(r'^MP_verify_(?P<key>.+)\.txt$', wxauth_router.views.verify_key),
+    url(r'^$', core.views.index),
+    url(r'^wechat_demo_order/(?P<appid>.+)/$', core.views.wechat_demo_order),
+    url(r'^make_order/(?P<appid>.+)/$', core.views.make_order),
+    url(r'^make_wechat_withdraw_ticket/(?P<appid>.+)/(?P<code>.+)/$', core.views.make_wechat_withdraw_ticket),
+    url(r'^apply_wechat_withdraw/(?P<withdraw_key>.+)/(?P<sign>.+)/$', core.views.apply_wechat_withdraw),
+    # url(r'^make_order_form/(?P<appid>.+)/$', core.views.make_order_form),
+    url(r'^notify/(?P<appid>.+)/$', core.views.notify),
+    url(r'^query_order/(?P<appid>.+)/$', core.views.query_order),
+    url(r'^verify_notify/(?P<appid>.+)/$', core.views.verify_notify),
+    url(r'^verify_return/(?P<appid>.+)/$', core.views.verify_return),
+    url(r'^sns_user/(?P<appid>.+)/(?P<code>.+)/$', core.views.sns_user),
+    url(r'^auth/(?P<appid>.+)/$', core.views.auth),
+    url(r'^ticket/(?P<key>.+)/$', core.views.ticket),
+    url(r'^wx_jssdk/(?P<appid>.+)/$', core.views.wx_jssdk),
+    url(r'^wx_jssdk_script/(?P<appid>.+)/$', core.views.wx_jssdk_script),
+    url(r'^user/(?P<appid>.+)/(?P<unionid>.+)/$', core.views.user),
+    url(r'^preview/$', core.views.preview),
+    url(r'^MP_verify_(?P<key>.+)\.txt$', core.views.verify_key),
     url(r'^admin/', admin.site.urls),
-    # url(r'^paypal/', include('paypal.standard.ipn.urls', namespace='paypal')),
 ]
 
 if settings.DEBUG:

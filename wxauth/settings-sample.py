@@ -39,11 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'config',
-    'wxauth_router',
+    'core',
 ]
 
 MIDDLEWARE_CLASSES = [
-    'wxauth_router.middleware.GlobalRequestMiddleware',
+    'core.middleware.GlobalRequestMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -81,7 +81,7 @@ WSGI_APPLICATION = 'wxauth.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'wxauth_router',
+        'NAME': 'core',
         'HOST': '127.0.0.1',
         'USER': 'root',
         'PASSWORD': 'root',
