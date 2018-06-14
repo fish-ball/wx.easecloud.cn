@@ -3,10 +3,12 @@ import json
 from django.db import models
 from django.http import HttpResponseNotFound, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect
+from django.views.decorators.csrf import csrf_exempt
 
 from core.models import WechatApp, ResultTicket
 
 
+@csrf_exempt
 def auth(request, appid):
     """ 微信公众号 OAuth 授权
     直接带 appid 跳转到本 view 可以引导至微信公众号 OAuth 验证
