@@ -161,7 +161,6 @@ class WechatApp(PlatformApp):
         :param request:
         :return:
         """
-        (print(k, v) for k, v in request.META.items())
         # 记录传入的 redirect_uri
         redirect_uri = request.POST.get('redirect_uri') or \
                        request.GET.get('redirect_uri') or \

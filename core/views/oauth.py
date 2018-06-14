@@ -26,11 +26,11 @@ def auth(request, appid):
 def auth_callback(request, appid):
     """ 接受并处理 oauth sns_api 的跳转回调
     :param request:
-    :param appid: 回调附带的 appid，暂时只支持微信公众号
+    :param appid: 回调附带的 appid，支持微信公众号以及微信网页 APP
     :return:
     """
     # 微信公众号
-    app = WechatApp.objects.filter(app_id=appid, type=WechatApp.TYPE_BIZ).first()
+    app = WechatApp.objects.filter(app_id=appid).first()
     if app:
         # 第一步：获取 code 和 state 之后传入本页面
         code = request.GET.get('code', '')
