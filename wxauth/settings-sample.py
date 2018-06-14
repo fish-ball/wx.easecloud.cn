@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 import codecs
-codecs.register(lambda name: codecs.lookup('utf8') if name == 'utf8mb4' else None)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,8 +25,7 @@ SECRET_KEY = '69tdcj=)@id&(sacouz(7=lcz@y+0bm%o)!x*stg)m%u@u8ni!'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -42,16 +40,15 @@ INSTALLED_APPS = [
     'core',
 ]
 
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     'core.middleware.GlobalRequestMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware'
 ]
 
 ROOT_URLCONF = 'wxauth.urls'
@@ -74,19 +71,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'wxauth.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'core',
+        'NAME': 'django_wxauth',
         'HOST': '127.0.0.1',
         'USER': 'root',
         'PASSWORD': 'root',
         'OPTIONS': {
             'charset': 'utf8mb4',
+            'init_command': '''
+            SET default_storage_engine=INNODB;
+            SET sql_mode='STRICT_TRANS_TABLES';
+            SET GLOBAL binlog_format=row;
+            ''',
         }
     },
     'sqlite': {
@@ -94,7 +95,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
@@ -114,20 +114,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
-
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
@@ -135,9 +133,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+MEDIA_URL = '/media/'
 
-
-# WxAuth settings
-
-WXAUTH_APPID = 'wx579e43a4729b1764'
-WXAUTH_APPSECRET = 'b90b1beaaef5e8e0e1f51647a3ae5cbc'
