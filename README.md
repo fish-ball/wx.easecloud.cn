@@ -5,6 +5,8 @@ WeChat SNS API shared by Easecloud Co. Ltd.
 
 <https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421140842&token=&lang=zh_CN>
 
+> NOTICE: v1.0 API is now **DEPRECATED**, see the old version: <https://github.com/fish-ball/wx.easecloud.cn/blob/1.0/README.md>
+
 Minimal Example
 ---------------
 
@@ -18,10 +20,6 @@ Ignore the `redirect_uri` param will lead the page returning to `HTTP_REFERER`.
 
 And the returning querystring contains a `ticket=<ticket>` query param, you can fetch the user
 authenticated by requesting `http://wx.easecloud.cn/ticket/<ticket>/`.
-
-##### V1.0 (old api):
-
-**Entrance Link:** <https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx579e43a4729b1764&redirect_uri=http%3a%2f%2fwx.easecloud.cn&response_type=code&scope=snsapi_userinfo&state=ba0ab193#wechat_redirect>
 
 Principle
 ---------

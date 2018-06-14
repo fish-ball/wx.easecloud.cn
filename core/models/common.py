@@ -53,9 +53,12 @@ class PlatformApp(models.Model):
         return self.title
 
     def get_oauth_redirect_url(self):
+        """ 获取 oauth 回调的完整回调地址
+        :return:
+        """
         from urllib.parse import urljoin
         from ..middleware import get_request
-        from ..views import index
+        from ..views.oauth import auth_callback
         from django.shortcuts import reverse
-        return self.oauth_redirect_url or \
-               urljoin(get_request().get_raw_uri(), reverse(index))
+        return self.oauth_redirect_url \
+               or urljoin(get_request().get_raw_uri(), reverse(auth_callback, kwargs=self.app_id))

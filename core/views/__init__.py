@@ -1,130 +1,28 @@
 from django.http \
-    import HttpResponse, JsonResponse, HttpResponseBadRequest
+    import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from . import utils as u
-from .models import *
+from .. import utils as u
+from ..models import *
 
 
 def index(request):
-    """
-    首页，接受微信 snsapi 的跳转
-    :param request:
-    :return:
-    """
-
-    # 获取 session 保存的跳转前参数并重置 session
-
-    oauth_app_id = request.session.get('oauth_app_id') or ''
-    request.session.delete('oauth_app_id')
-
-    oauth_redirect_uri = request.session.get('oauth_redirect_uri') or ''
-    request.session.delete('oauth_redirect_uri')
-
-    oauth_params = request.session.get('oauth_params')
-    request.session.delete('oauth_params')
-
-    # 微信公众号
-    app = WechatApp.objects.filter(
-        models.Q(
-            models.Q(app_id=oauth_app_id) |
-            models.Q(domain=request.get_host())
-        ),
-        type=WechatApp.TYPE_BIZ,
-    ).first()
-
-    if app:
-
-        # 第一步：获取 code 和 state 之后传入本页面
-        code = request.GET.get('code', '')
-        state = request.GET.get('state', '')
-
-        if not code:
-            # @deprecated
-            # V1.0 API，直接跳转到首页请求发起 OAuth
-            ua = request.META.get('HTTP_USER_AGENT')
-            # print(('MicroMessenger' in ua), ua)
-            # print(domain.domain, domain.title)
-            if 'MicroMessenger' in ua and app:
-                return redirect(
-                    'https://open.weixin.qq.com/connect/oauth2/authorize'
-                    '?appid=%s&redirect_uri=%s'
-                    '&response_type=code'
-                    '&scope=snsapi_userinfo'
-                    '&state=#wechat_redirect' % (
-                        app.app_id,
-                        'http%3a%2f%2f' + app.domain,
-                    )
-                )
-            else:
-                return redirect('/admin')
-
-        wxuser = app.get_sns_user(code)
-        if not wxuser:
-            return HttpResponseBadRequest(
-                ('获取用户信息失败，详细错误信息请查看错误日志' +
-                 'code: {}, appid: {}').format(code, oauth_app_id)
-            )
-
-        # 第四步：根据 state 值进行跳转
-        # state 的格式：前八位对应 RequestTarget 的 key 后面为传输参数
-        target = RequestTarget.objects.filter(key=state[:8]).first()
-
-        if target:
-            redirect_uri = target.url
-        else:
-            # 如果没有指定，采用跳转前写入 session 的 redirect_uri
-            redirect_uri = oauth_redirect_uri
-
-        # 截取后段传递的参数
-        params = state[8:] or oauth_params or ''
-
-        if redirect_uri:
-            return redirect(
-                redirect_uri + '%sticket=%s&state=%s' % (
-                    '&' if '?' in redirect_uri else '?',
-                    ResultTicket.make(wxuser).key,
-                    params
-                )
-            )
-
-        return HttpResponseBadRequest('验证回跳地址没有指定')
-
-    return redirect('/admin')
-
-
-def user(request, appid, unionid):
-    """ 提供查询接口，让客户拿到 openid 之后查询用户的信息
-    """
-
-    app = WechatApp.objects.get(app_id=appid).withdraw_app
-
-    wxuser = WechatUser.objects.get(
-        unionid=unionid, app=app)
-
-    if not wxuser:
-        return HttpResponse(status=404)
-
-    return HttpResponse(json.dumps(wxuser.serialize()))
-
-
-def ticket(request, key):
-    """ 提供查询接口，让客户拿到 result key 之后查询用户的信息
-    """
-    wxuser = ResultTicket.fetch_user(key)
-
-    if not wxuser:
-        return HttpResponse(status=404)
-
-    return HttpResponse(json.dumps(wxuser.serialize()))
+    return HttpResponse(r'''<pre>
+    _________   _____ ______________    ____  __  ______ 
+   / ____/   | / ___// ____/ ____/ /   / __ \/ / / / __ \
+  / __/ / /| | \__ \/ __/ / /   / /   / / / / / / / / / /
+ / /___/ ___ |___/ / /___/ /___/ /___/ /_/ / /_/ / /_/ / 
+/_____/_/  |_/____/_____/\____/_____/\____/\____/_____/  
+    </pre>''')
 
 
 def preview(request):
     """
     redirect 到这个回调，可以预览结果
     """
+    from .oauth import ticket
     return redirect(reverse(
         ticket, kwargs={'key': request.GET.get('ticket')}
     ))
@@ -271,6 +169,7 @@ def apply_wechat_withdraw(request, withdraw_key, sign):
         msg='处理失败：' + str(),
     ))
 
+
 def get_wechat_native_oauth_url(request, appid):
     pass
 
@@ -324,51 +223,6 @@ def query_order(request, appid):
             out_trade_no=request.GET.get('out_trade_no', ''),
         ), safe=False)
     return HttpResponse('APPID未注册', status=400)
-
-
-def auth(request, appid):
-    """
-    直接带 appid 跳转到本 view 可以引导至微信公众号 OAuth 验证
-    :param request:
-    :param appid:
-    :return:
-    """
-    # 记录传入的 redirect_uri
-    redirect_uri = \
-        request.POST.get('redirect_uri') \
-        or request.GET.get('redirect_uri') \
-        or request.META.get('HTTP_REFERER')
-    assert redirect_uri, \
-        '没有找到回调地址，请从 POST.redirect_uri，GET.redirect_uri，' \
-        'HTTP_REFERER 中选一个传入'
-    request.session['oauth_redirect_uri'] = redirect_uri
-    # 记录传入的 params
-    request.session['oauth_params'] = \
-        request.POST.get('params') or request.GET.get('params')
-    # 记录传入的 oauth_app_id
-    request.session['oauth_app_id'] = appid
-
-    # 根据 app 类型进行跳转
-    # 微信公众号
-    app = WechatApp.objects.filter(app_id=appid).first()
-    if app:
-        return redirect(app.get_oauth_login_url())
-
-
-def sns_user(request, appid, code):
-    """
-    根据 OAuth 接口请求回来的 code 获取用的信息
-    :param request:
-    :param appid:
-    :param code:
-    :return:
-    """
-    app = WechatApp.objects.get(app_id=appid)
-    wxuser = app.get_sns_user(code)
-    return HttpResponse(
-        json.dumps(wxuser.serialize())
-        if wxuser else '获取用户信息失败，可能是 code 已失效'
-    )
 
 
 def wx_jssdk(request, appid):

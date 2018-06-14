@@ -154,6 +154,41 @@ class WechatApp(PlatformApp):
             self.domain,
         )
 
+    @staticmethod
+    def stage_oauth_redirect_info(request):
+        """ 暂存传入的回调参数（第三方回调地址 + 参数）
+        主要供微信公众号 OAuth 接口使用
+        :param request:
+        :return:
+        """
+        # 记录传入的 redirect_uri
+        redirect_uri = request.POST.get('redirect_uri') or \
+                       request.GET.get('redirect_uri') or \
+                       request.META.get('HTTP_REFERER')
+        assert redirect_uri, '没有找到回调地址，请从 POST.redirect_uri，' \
+                             'GET.redirect_uri，HTTP_REFERER 中选一个传入'
+        request.session['oauth_redirect_uri'] = redirect_uri
+        # 记录传入的 params
+        request.session['oauth_params'] = \
+            request.POST.get('params') or request.GET.get('params')
+        request.session.modified = True
+
+    @staticmethod
+    def restore_oauth_redirect_info(request):
+        """ 取回 oauth 回调参数并从 session 注销
+        :param request:
+        :return: redirect_uri, params
+        """
+        # 获取 session 保存的跳转前参数并重置 session
+        redirect_uri = request.session.get('oauth_redirect_uri') or ''
+        params = request.session.get('oauth_params')
+
+        request.session.delete('oauth_redirect_uri')
+        request.session.delete('oauth_params')
+        request.session.modified = True
+
+        return redirect_uri, params
+
     def mch_cert(self):
         from django.conf import settings
         path = os.path.join(settings.MEDIA_ROOT, 'wechat/{}/pay/apiclient_cert.pem'.format(self.app_id))
@@ -178,6 +213,10 @@ class WechatApp(PlatformApp):
         super().save(*args, **kwargs)
 
     def wechat_pay(self):
+        """ 获取当前微信平台号的 wechatpy.pay.WeChatPay 实例
+        http://wechatpy.readthedocs.io/zh_CN/master/pay.html#module-wechatpy.pay
+        :return:
+        """
         from wechatpy import pay
         return pay.WeChatPay(
             appid=self.app_id,
@@ -187,19 +226,41 @@ class WechatApp(PlatformApp):
             mch_key=self.mch_key(),
         )
 
-    def get_oauth_login_url(self):
-        auth_uri = (
-            'https://open.weixin.qq.com/connect/oauth2/authorize'
-            '?appid={}'
-            '&redirect_uri={}'
-            '&response_type=code'
-            '&scope=snsapi_userinfo'
-            '&state=#wechat_redirect'
-        ).format(
-            self.app_id,
-            self.get_oauth_redirect_url(),
+    def wechat_oauth(self, scope='snsapi_base', state=''):
+        """ 获取当前微信平台号的 wechatpy.oauth.WechatOAuth 实例
+        http://wechatpy.readthedocs.io/zh_CN/master/oauth.html#wechatpy.oauth.WeChatOAuth
+        :return:
+        """
+        from wechatpy import oauth
+        return oauth.WeChatOAuth(
+            app_id=self.app_id,
+            secret=self.app_secret,
+            redirect_uri=self.get_oauth_redirect_url(),
+            scope=scope,
+            state=state,
         )
-        return auth_uri
+
+    def get_oauth_login_url(self):
+        url = None
+        if self.type == self.TYPE_BIZ:
+            # 微信公众号
+            url = (
+                'https://open.weixin.qq.com/connect/oauth2/authorize'
+                '?appid={}'
+                '&redirect_uri={}'
+                '&response_type=code'
+                '&scope=snsapi_userinfo'
+                '&state=#wechat_redirect'
+            ).format(
+                self.app_id,
+                self.get_oauth_redirect_url(),
+            )
+        elif self.type == self.TYPE_WEB:
+            # 微信开放平台：网站应用
+            url = self.wechat_oauth().authorize_url
+        else:
+            raise ValidationError('微信APP仅支持公众号/网站应用获取OAuth授权地址')
+        return url
 
     def make_order(self, body, total_fee,
                    out_trade_no=None, user_id=None, product_id=None):
