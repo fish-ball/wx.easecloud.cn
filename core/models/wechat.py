@@ -405,7 +405,7 @@ class WechatApp(PlatformApp):
             )
 
             # 第三步：拉取用户信息
-            if 'snsapi_userinfo' in scope:
+            if 'snsapi_userinfo' in scope or scope == 'snsapi_login':
                 url = 'https://api.weixin.qq.com/sns/userinfo' \
                       '?access_token=%s&openid=%s&lang=zh_CN' \
                       % (access_token, openid)
