@@ -181,7 +181,7 @@ class WechatApp(PlatformApp):
         """
         # 获取 session 保存的跳转前参数并重置 session
         redirect_uri = request.session.get('oauth_redirect_uri') or ''
-        params = request.session.get('oauth_params')
+        params = request.session.get('oauth_params') or  ''
 
         request.session.delete('oauth_redirect_uri')
         request.session.delete('oauth_params')
