@@ -34,8 +34,9 @@ def verify_key(request, key):
     :param request:
     :return:
     """
-    app = WechatApp.objects.filter(domain=request.get_host()).first()
-    assert key and key == app.verify_key, '验证码不正确'
+    # 直通车算了，没必要搞验证了
+    # app = WechatApp.objects.filter(domain=request.get_host()).first()
+    # assert key and key == app.verify_key, '验证码不正确'
     return HttpResponse(key)
 
 
