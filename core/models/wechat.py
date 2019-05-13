@@ -38,11 +38,13 @@ class WechatApp(PlatformApp):
     TRADE_TYPE_NATIVE = 'NATIVE'
     TRADE_TYPE_APP = 'APP'
     TRADE_TYPE_WAP = 'WAP'
+    TRADE_TYPE_MINIAPP = 'MINIAPP'
     TRADE_TYPE_CHOICES = (
         (TRADE_TYPE_JSAPI, '公众号JSAPI'),
         (TRADE_TYPE_NATIVE, '扫码支付'),
         (TRADE_TYPE_APP, 'APP支付'),
         (TRADE_TYPE_WAP, '网页WAP'),
+        (TRADE_TYPE_MINIAPP, '微信小程序'),
     )
 
     trade_type = models.CharField(
@@ -54,11 +56,13 @@ class WechatApp(PlatformApp):
     TYPE_APP = 'APP'
     TYPE_WEB = 'NATIVE'
     TYPE_BIZ = 'BIZ'
+    TYPE_MINIAPP = 'MINIAPP'
     TYPE_BIZPLUGIN = 'BIZPLUGIN'
     TYPE_CHOICES = (
         (TYPE_APP, '移动应用'),
         (TYPE_WEB, '网站应用'),
         (TYPE_BIZ, '公众账号'),
+        (TYPE_MINIAPP, '微信小程序'),
         # (TYPE_BIZPLUGIN, '公众号第三方平台'),
     )
 
@@ -181,7 +185,7 @@ class WechatApp(PlatformApp):
         """
         # 获取 session 保存的跳转前参数并重置 session
         redirect_uri = request.session.get('oauth_redirect_uri') or ''
-        params = request.session.get('oauth_params') or  ''
+        params = request.session.get('oauth_params') or ''
 
         request.session.delete('oauth_redirect_uri')
         request.session.delete('oauth_params')
@@ -379,6 +383,29 @@ class WechatApp(PlatformApp):
         #            '&product_id=' + product_id + \
         #            '&time_stamp=' + timestamp + \
         #            '&nonce_str=' + nonce_str
+
+    def code_to_user(self, code):
+        """ 小程序通过 code 获取 Session
+        https://developers.weixin.qq.com/miniprogram/dev/api-backend/auth.code2Session.html
+        http://docs.wechatpy.org/zh_CN/master/client/wxa.html?highlight=code_to_sess#wechatpy.client.api.WeChatWxa.code_to_session
+        """
+        try:
+            wxsession = self.get_wechat_client().wxa.code_to_session(code)
+            session_openid = wxsession['openid']
+            session_unionid = wxsession['unionid']
+
+            wxuser, created = self.users.get_or_create(
+                models.Q(openid=session_openid),
+                defaults=dict(unionid=session_unionid)
+            )
+            return wxuser
+        except Exception as ex:
+            print(ex)
+            # 跳过错误并且返回 None (输出到错误流)
+            import traceback
+            from sys import stderr
+            print(traceback.format_exc(), file=stderr)
+            return None
 
     def get_sns_user(self, code):
 
@@ -626,6 +653,7 @@ class WechatUser(models.Model):
         verbose_name='用户昵称',
         max_length=128,
         null=True,
+        blank=True,
     )
 
     sex = models.IntegerField(
@@ -635,47 +663,55 @@ class WechatUser(models.Model):
             (0, '未知'),
             (1, '男'),
             (2, '女'),
-        )
+        ),
+        blank=True,
     )
 
     province = models.CharField(
         verbose_name='省份',
         max_length=120,
         null=True,
+        blank=True,
     )
 
     city = models.CharField(
         verbose_name='城市',
         max_length=120,
         null=True,
+        blank=True,
     )
 
     country = models.CharField(
         verbose_name='国家',
         max_length=120,
         null=True,
+        blank=True,
     )
 
     headimgurl = models.URLField(
         verbose_name='用户头像',
         null=True,
+        blank=True,
     )
 
     avatar = models.ImageField(
         verbose_name='头像文件',
         null=True,
+        blank=True,
         upload_to='avatar'
     )
 
     privilege = models.TextField(
         verbose_name='用户特权信息',
         null=True,
+        blank=True,
     )
 
     unionid = models.CharField(
         verbose_name='用户unionid',
         max_length=64,
         null=True,
+        blank=True,
     )
 
     date_created = models.DateTimeField(
