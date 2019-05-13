@@ -395,7 +395,7 @@ class WechatApp(PlatformApp):
             session_unionid = wxsession['unionid']
 
             wxuser, created = self.users.get_or_create(
-                models.Q(openid=session_openid),
+                openid=session_openid,
                 defaults=dict(unionid=session_unionid)
             )
             return wxuser

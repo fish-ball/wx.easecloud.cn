@@ -75,13 +75,13 @@ def sns_user(request, appid, code):
             wxuser = app.get_sns_user(code)
             return HttpResponse(
                 json.dumps(wxuser.serialize()) if wxuser else '获取用户信息失败，可能是 code 已失效',
-                code=200 if wxuser else 400
+                status=200 if wxuser else 400
             )
         elif app.type == WechatApp.TYPE_MINIAPP:
             wxuser = app.code_to_user(code)
             return HttpResponse(
                 json.dumps(wxuser.serialize()) if wxuser else '获取用户信息失败，可能是 code 已失效',
-                code=200 if wxuser else 400
+                status=200 if wxuser else 400
             )
         else:
             return HttpResponse('获取用户信息失败，应用类型必须为APP或者小程序', status=400)
