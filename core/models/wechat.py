@@ -817,7 +817,8 @@ class WechatUser(models.Model):
         self.save()
 
         # 保存头像图
-        self.update_avatar(data.get('headimgurl'))
+        if data.get('headimgurl'):
+            self.update_avatar(data.get('headimgurl'))
 
     def get_withdraw_user(self):
         # 返回当前APP的提现用户对象
