@@ -107,4 +107,7 @@ def user(request, appid, user_id):
     if not wxuser:
         return HttpResponse(status=404)
 
+    if request.GET.get('force_update'):
+        wxuser.reload_info()
+
     return HttpResponse(json.dumps(wxuser.serialize()))

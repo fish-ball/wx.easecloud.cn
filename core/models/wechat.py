@@ -622,6 +622,11 @@ class WechatUser(models.Model):
         primary_key=True,
     )
 
+    subscribe = models.BooleanField(
+        verbose_name='是否关注',
+        default=False,
+    )
+
     nickname = models.CharField(
         verbose_name='用户昵称',
         max_length=128,
@@ -761,16 +766,12 @@ class WechatUser(models.Model):
 
     def reload_info(self):
         client = self.app.get_wechat_client()
-        try:
-            data = client.user.get(self.openid)
-            if data.get('subscribe'):
-                self.update_info(data)
-            elif not self.avatar:
-                self.update_avatar(self.headimgurl)
-        except Exception as ex:
-            print(ex)
+        data = client.user.get(self.openid)
+        self.update_info(data)
 
     def update_info(self, data):
+        # 做适当的转化
+        data['subscribe'] = bool(int(data.get('subscribe') or 0))
 
         # 写入所有字段
         for key, val in data.items():
