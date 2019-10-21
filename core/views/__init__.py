@@ -239,6 +239,7 @@ def wx_jssdk(request, appid):
 
 def wx_jssdk_script(request, appid):
     app = WechatApp.objects.get(app_id=appid)
-    return render(request, 'core/wx_jssdk.js', dict(
+    version = request.GET.get('version') or '1.0.0'
+    return render(request, 'core/jweixin-{}.js'.format(version), dict(
         wx_config=json.dumps(app.get_jssdk_config(request))
     ), 'application/javascript')

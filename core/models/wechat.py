@@ -475,7 +475,7 @@ class WechatApp(PlatformApp):
             nonce_str += chars[random.randint(0, chars.__len__())]
         return nonce_str
 
-    def get_jssdk_config(self, request, debug=None):
+    def get_jssdk_config(self, request, debug=None, version='1.0.0'):
         import time
         from wechatpy.utils import random_string, to_text
         from wechatpy.client.api import WeChatJSAPI
@@ -487,48 +487,56 @@ class WechatApp(PlatformApp):
         signature = jsapi.get_jsapi_signature(nonce_str, ticket, timestamp, url)
         debug = bool(request.GET.get('debug')) if debug is None else debug
 
+        api_list = dict(
+            checkJsApi=dict(minv='1.0.0', maxv='^'),
+            onMenuShareTimeline=dict(minv='1.0.0', maxv='^'),
+            onMenuShareAppMessage=dict(minv='1.0.0', maxv='^'),
+            onMenuShareQQ=dict(minv='1.0.0', maxv='^'),
+            onMenuShareWeibo=dict(minv='1.0.0', maxv='^'),
+            hideMenuItems=dict(minv='1.0.0', maxv='^'),
+            showMenuItems=dict(minv='1.0.0', maxv='^'),
+            hideAllNonBaseMenuItem=dict(minv='1.0.0', maxv='^'),
+            showAllNonBaseMenuItem=dict(minv='1.0.0', maxv='^'),
+            translateVoice=dict(minv='1.0.0', maxv='^'),
+            startRecord=dict(minv='1.0.0', maxv='^'),
+            stopRecord=dict(minv='1.0.0', maxv='^'),
+            onRecordEnd=dict(minv='1.0.0', maxv='^'),
+            playVoice=dict(minv='1.0.0', maxv='^'),
+            pauseVoice=dict(minv='1.0.0', maxv='^'),
+            stopVoice=dict(minv='1.0.0', maxv='^'),
+            uploadVoice=dict(minv='1.0.0', maxv='^'),
+            downloadVoice=dict(minv='1.0.0', maxv='^'),
+            chooseImage=dict(minv='1.0.0', maxv='^'),
+            previewImage=dict(minv='1.0.0', maxv='^'),
+            uploadImage=dict(minv='1.0.0', maxv='^'),
+            downloadImage=dict(minv='1.0.0', maxv='^'),
+            getNetworkType=dict(minv='1.0.0', maxv='^'),
+            openLocation=dict(minv='1.0.0', maxv='^'),
+            getLocation=dict(minv='1.0.0', maxv='^'),
+            hideOptionMenu=dict(minv='1.0.0', maxv='^'),
+            showOptionMenu=dict(minv='1.0.0', maxv='^'),
+            closeWindow=dict(minv='1.0.0', maxv='^'),
+            scanQRCode=dict(minv='1.0.0', maxv='^'),
+            chooseWXPay=dict(minv='1.0.0', maxv='^'),
+            openProductSpecificView=dict(minv='1.0.0', maxv='^'),
+            addCard=dict(minv='1.0.0', maxv='^'),
+            chooseCard=dict(minv='1.0.0', maxv='^'),
+            openCard=dict(minv='1.0.0', maxv='^'),
+            # 1.4.0 added
+            updateAppMessageShareData=dict(minv='1.4.0', maxv='^'),
+            updateTimelineShareData=dict(minv='1.4.0', maxv='^'),
+            onMenuShareQZone=dict(minv='1.4.0', maxv='^'),
+            onVoiceRecordEnd=dict(minv='1.4.0', maxv='^'),
+            onVoicePlayEnd=dict(minv='1.4.0', maxv='^'),
+        )
+
         return dict(
             debug=debug,
             appId=self.app_id,
             timestamp=timestamp,
             nonceStr=nonce_str,
             signature=signature,
-            jsApiList=[
-                'checkJsApi',
-                'onMenuShareTimeline',
-                'onMenuShareAppMessage',
-                'onMenuShareQQ',
-                'onMenuShareWeibo',
-                'hideMenuItems',
-                'showMenuItems',
-                'hideAllNonBaseMenuItem',
-                'showAllNonBaseMenuItem',
-                'translateVoice',
-                'startRecord',
-                'stopRecord',
-                'onRecordEnd',
-                'playVoice',
-                'pauseVoice',
-                'stopVoice',
-                'uploadVoice',
-                'downloadVoice',
-                'chooseImage',
-                'previewImage',
-                'uploadImage',
-                'downloadImage',
-                'getNetworkType',
-                'openLocation',
-                'getLocation',
-                'hideOptionMenu',
-                'showOptionMenu',
-                'closeWindow',
-                'scanQRCode',
-                'chooseWXPay',
-                'openProductSpecificView',
-                'addCard',
-                'chooseCard',
-                'openCard'
-            ],
+            jsApiList=[k for k, v in api_list.items() if v['minv'] <= version <= v['maxv']],
         )
 
     def make_withdraw_ticket(self, code, amount,
