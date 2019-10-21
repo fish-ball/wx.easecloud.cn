@@ -489,9 +489,9 @@ class WechatApp(PlatformApp):
 
         api_list = dict(
             checkJsApi=dict(minv='1.0.0', maxv='^'),
-            onMenuShareTimeline=dict(minv='1.0.0', maxv='^'),
-            onMenuShareAppMessage=dict(minv='1.0.0', maxv='^'),
-            onMenuShareQQ=dict(minv='1.0.0', maxv='^'),
+            onMenuShareTimeline=dict(minv='1.0.0', maxv='1.4.0'),
+            onMenuShareAppMessage=dict(minv='1.0.0', maxv='1.4.0'),
+            onMenuShareQQ=dict(minv='1.0.0', maxv='1.4.0'),
             onMenuShareWeibo=dict(minv='1.0.0', maxv='^'),
             hideMenuItems=dict(minv='1.0.0', maxv='^'),
             showMenuItems=dict(minv='1.0.0', maxv='^'),
@@ -536,7 +536,7 @@ class WechatApp(PlatformApp):
             timestamp=timestamp,
             nonceStr=nonce_str,
             signature=signature,
-            jsApiList=[k for k, v in api_list.items() if v['minv'] <= version <= v['maxv']],
+            jsApiList=[k for k, v in api_list.items() if v['minv'] <= version < v['maxv']],
         )
 
     def make_withdraw_ticket(self, code, amount,
