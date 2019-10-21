@@ -489,9 +489,9 @@ class WechatApp(PlatformApp):
 
         api_list = dict(
             checkJsApi=dict(minv='1.0.0', maxv='^'),
-            onMenuShareTimeline=dict(minv='1.0.0', maxv='1.4.0'),
-            onMenuShareAppMessage=dict(minv='1.0.0', maxv='1.4.0'),
-            onMenuShareQQ=dict(minv='1.0.0', maxv='1.4.0'),
+            onMenuShareTimeline=dict(minv='1.0.0', maxv='^'),
+            onMenuShareAppMessage=dict(minv='1.0.0', maxv='^'),
+            onMenuShareQQ=dict(minv='1.0.0', maxv='^'),
             onMenuShareWeibo=dict(minv='1.0.0', maxv='^'),
             hideMenuItems=dict(minv='1.0.0', maxv='^'),
             showMenuItems=dict(minv='1.0.0', maxv='^'),
