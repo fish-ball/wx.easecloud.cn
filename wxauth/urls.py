@@ -32,6 +32,10 @@ urlpatterns = [
     url(r'^ticket/(?P<key>[^/]+)/$', core.views.oauth.ticket),
     url(r'^user/(?P<appid>[^/]+)/(?P<user_id>[^/]+)/$', core.views.oauth.user),
 
+    # 模板消息
+    url(r'^template/(?P<appid>[^/]+)/list/$', core.views.oauth.template_list),
+    url(r'^template/(?P<appid>[^/]+)/send/$', core.views.oauth.template_send),
+
     # 支付
     url(r'^make_order/(?P<appid>[^/]+)/$', core.views.make_order),
     url(r'^notify/(?P<appid>[^/]+)/$', core.views.notify),

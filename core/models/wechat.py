@@ -129,6 +129,13 @@ class WechatApp(PlatformApp):
         on_delete=models.PROTECT
     )
 
+    template_send_token = models.CharField(
+        verbose_name='模板推送令牌',
+        max_length=32,
+        blank=True,
+        help_text='调用 template/<appid>/send 的时候要加上 token=?? 推送'
+    )
+
     # access_token = models.CharField(
     #     verbose_name='Access Token',
     #     max_length=255,

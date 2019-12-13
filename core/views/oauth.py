@@ -1,7 +1,7 @@
 import json
 
 from django.db import models
-from django.http import HttpResponseNotFound, HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponseNotFound, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 
@@ -115,9 +115,35 @@ def user(request, appid, user_id):
     ).first()
 
     if not wxuser:
-        return HttpResponse(status=404)
+        return HttpResponseNotFound()
 
     if request.GET.get('force_update'):
         wxuser.reload_info()
 
     return HttpResponse(json.dumps(wxuser.serialize()))
+
+
+def template_list(request, appid):
+    app = WechatApp.objects.get(app_id=appid)
+    from wechatpy.client.api import WeChatTemplate
+    tpl = WeChatTemplate(app.get_wechat_client())
+    return JsonResponse(tpl.get_all_private_template())
+
+
+@csrf_exempt
+def template_send(request, appid):
+    app = WechatApp.objects.get(app_id=appid)
+    # 校验 token，必须已经设置并且提交的 token 满足才可以
+    token = request.POST.get('token')
+    if not app.template_send_token or token != app.template_send_token:
+        return HttpResponseNotFound()
+    # 获取参数并发起推送
+    openid = request.POST.get('openid')
+    template_id = request.POST.get('template_id')
+    data = json.loads(request.POST.get('data'))
+    url = request.POST.get('url')
+    mini_program = request.POST.get('mini_program')
+    from wechatpy.client.api import WeChatMessage
+    msg = WeChatMessage(app.get_wechat_client())
+    msg.send_template(openid, template_id, data, url, mini_program)
+    return HttpResponse('推送成功')
