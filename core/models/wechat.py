@@ -153,6 +153,15 @@ class WechatApp(PlatformApp):
     #     default=0,
     # )
 
+    # 应用内校验字段，如果调用红包发送接口，需要设置这个
+    redpack_key = models.CharField(
+        verbose_name='红包秘钥',
+        max_length=32,
+        blank=True,
+        help_text='调用 send_redpack 的时候需要校验客户端提交的 sign'
+                  'sign=md5(openid+out_trade_no+amount+nonce_str+redpack_key)'
+    )
+
     class Meta:
         verbose_name = '微信APP'
         verbose_name_plural = '微信APP'
@@ -345,6 +354,32 @@ class WechatApp(PlatformApp):
             return dict(result)
         except:
             return None
+
+    def send_redpack(self, openid, amount, name, act_name, wishing, remark, out_trade_no=None):
+        result = self.wechat_pay().redpack.send(
+            openid, amount, name, act_name, wishing, remark, out_trade_no)
+        redpack, created = self.redpacks.get_or_create(out_trade_no=result.get('mch_billno'))
+        redpack.update_info(result)
+        return redpack
+        # pay.redpack.send(uid, 100,'广西德枞','销售红包奖励','希望你再接再厉哟','感谢您为我们做出的贡献',out_trade_no='abcd1234')
+        # OrderedDict([('return_code', 'SUCCESS'),
+        # ('return_msg', '该红包已经成功,已经被领取或者发起退款'),
+        # ('result_code', 'SUCCESS'),
+        # ('err_code', 'SUCCESS'),
+        # ('err_code_des', '该红包已经成功,已经被领取或者发起退款'),
+        # ('mch_billno', 'abcd1234'),
+        # ('mch_id', '1566426571'),
+        # ('wxappid', 'wx8466220d6b90ee0f'),
+        # ('re_openid', 'oh6qqt-R_XK1VLsom37yjz0sEvno'),
+        # ('total_amount', '100')])
+
+    def ensure_user(self, openid):
+        wechat_user = self.users.filter(openid=openid).first()
+        if not wechat_user:
+            client = self.get_wechat_client()
+            user = client.user.get(openid)
+            self.users.create(**user)
+        return wechat_user
 
     def get_jsapi_params(self, prepay_id):
         """ 返回 jsapi 的付款对象 """
@@ -845,6 +880,58 @@ class WechatUser(models.Model):
             unionid=self.unionid,
             app__type=WechatApp.TYPE_BIZ
         ).first()
+
+
+class WechatRedpack(models.Model):
+    """ 微信红包记录 """
+    app = models.ForeignKey(
+        verbose_name='微信APP',
+        to='WechatApp',
+        related_name='redpacks',
+        null=True,
+        on_delete=models.PROTECT
+    )
+
+    out_trade_no = models.CharField(
+        verbose_name='内部订单号',
+        blank=True,
+        null=True,
+    )
+
+    result_code = models.CharField(
+        verbose_name='发放结果',
+        max_length=20
+    )
+
+    wechat_user = models.ForeignKey(
+        verbose_name='微信用户',
+        to='WechatUser',
+        related_name='redpacks',
+        null=True,
+        on_delete=models.PROTECT
+    )
+
+    amount = models.IntegerField(
+        verbose_name='发放金额',
+    )
+
+    result = models.TextField(
+        verbose_name='发放红包的返回数据',
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = '微信红包记录'
+        verbose_name_plural = '微信红包记录'
+        db_table = 'wxauth_wechat_redpack'
+
+    def update_info(self, data):
+        """ 根据发放红包返回的报文更新订单信息 """
+        self.result = json.dumps(data)
+        self.result_code = data.get('result_code')
+        self.wechat_user = self.app.ensure_user(data.get('re_openid'))
+        self.amount = int(data.get('total_amount'))
+        self.save()
 
 
 class WechatWithdrawTicket(models.Model):
