@@ -23,11 +23,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='wechatapp',
-            name='redpack_key',
-            field=models.CharField(blank=True, help_text='调用 send_redpack 的时候需要校验客户端提交的 signsign=md5(openid+out_trade_no+amount+nonce_str+redpack_key)', max_length=10, verbose_name='红包秘钥'),
-        ),
-        migrations.AlterField(
-            model_name='wechatapp',
             name='trade_type',
             field=models.CharField(choices=[('JSAPI', '公众号JSAPI'), ('NATIVE', '扫码支付'), ('APP', 'APP支付'), ('WAP', '网页WAP'), ('MINIAPP', '微信小程序')], max_length=10, verbose_name='支付方式'),
         ),
@@ -44,7 +39,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='wechatapp',
             name='redpack_key',
-            field=models.CharField(blank=True, help_text='调用 send_redpack 的时候需要校验客户端提交的 signsign=md5(openid+out_trade_no+amount+nonce_str+redpack_key)', max_length=32, verbose_name='红包秘钥'),
+            field=models.CharField(blank=True, help_text='调用 send_redpack 的时候需要校验客户端提交的 signsign=md5(openid+out_trade_no+amount+nonce_str+redpack_key)', max_length=10, verbose_name='红包秘钥'),
         ),
         migrations.CreateModel(
             name='WechatRedpack',
