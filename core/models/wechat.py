@@ -10,14 +10,14 @@ from .common import PlatformApp
 class WechatApp(PlatformApp):
     mch_id = models.CharField(
         verbose_name='商户号 MCH ID',
-        max_length=50,
+        max_length=10,
         blank=True,
         default='',
     )
 
     api_key = models.CharField(
         verbose_name='API 密钥',
-        max_length=50,
+        max_length=32,
         blank=True,
         default='',
     )
@@ -50,7 +50,7 @@ class WechatApp(PlatformApp):
     trade_type = models.CharField(
         verbose_name='支付方式',
         choices=TRADE_TYPE_CHOICES,
-        max_length=20,
+        max_length=10,
     )
 
     TYPE_APP = 'APP'
@@ -69,7 +69,7 @@ class WechatApp(PlatformApp):
     type = models.CharField(
         verbose_name='开放平台类型',
         choices=TYPE_CHOICES,
-        max_length=20,
+        max_length=10,
         help_text='参照 http://open.weixin.qq.com 管理中心的应用类型'
     )
 
@@ -87,7 +87,7 @@ class WechatApp(PlatformApp):
 
     verify_key = models.CharField(
         verbose_name='公众平台认证文件编码',
-        max_length=20,
+        max_length=16,
         blank=True,
         default='',
     )
@@ -156,7 +156,7 @@ class WechatApp(PlatformApp):
     # 应用内校验字段，如果调用红包发送接口，需要设置这个
     redpack_key = models.CharField(
         verbose_name='红包秘钥',
-        max_length=32,
+        max_length=10,
         blank=True,
         help_text='调用 send_redpack 的时候需要校验客户端提交的 sign'
                   'sign=md5(openid+out_trade_no+amount+nonce_str+redpack_key)'
