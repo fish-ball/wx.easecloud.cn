@@ -42,9 +42,9 @@ def send_redpack(request, appid):
     ).hexdigest()
     if sign.lower() != sign_valid:
         return HttpResponse('红包密钥签名验证失败', status=400)
-    from wechatpy import WeChatPayException
+    from wechatpy import WeChatClientException
     try:
         redpack = app.send_redpack(openid, amount, name, act_name, wishing, remark, out_trade_no)
-    except WeChatPayException as e:
-        return JsonResponse(e.__dict__, status=400)
+    except WeChatClientException as e:
+        return HttpResponse(str(e), status=400)
     return JsonResponse(json.loads(redpack.result))
