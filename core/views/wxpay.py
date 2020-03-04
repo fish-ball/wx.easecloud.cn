@@ -26,7 +26,7 @@ def send_redpack(request, appid):
     """
     app = WechatApp.objects.get(app_id=appid)
     # 关键字段
-    openid = request.POST.get('act_name') or ''
+    openid = request.POST.get('openid') or ''
     out_trade_no = request.POST.get('out_trade_no') or ''
     amount = int(request.POST.get('amount') or '0')
     nonce_str = request.POST.get('nonce_str') or ''

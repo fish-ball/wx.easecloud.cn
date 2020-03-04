@@ -357,7 +357,7 @@ class WechatApp(PlatformApp):
 
     def send_redpack(self, openid, amount, name, act_name, wishing, remark, out_trade_no=None):
         result = self.wechat_pay().redpack.send(
-            openid, amount, name, act_name, wishing, remark, out_trade_no)
+            openid, amount, name, act_name, wishing, remark, out_trade_no=out_trade_no)
         redpack, created = self.redpacks.get_or_create(out_trade_no=result.get('mch_billno'))
         redpack.update_info(result)
         return redpack
