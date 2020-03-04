@@ -894,6 +894,7 @@ class WechatRedpack(models.Model):
 
     out_trade_no = models.CharField(
         verbose_name='内部订单号',
+        max_length=30,
         blank=True,
         null=True,
     )

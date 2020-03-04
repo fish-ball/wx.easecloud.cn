@@ -19,6 +19,7 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 import core.views.oauth
+import core.views.wxpay
 
 
 urlpatterns = [
@@ -46,7 +47,7 @@ urlpatterns = [
     # 提现
     url(r'^make_wechat_withdraw_ticket/(?P<appid>[^/]+)/(?P<code>[^/]+)/$', core.views.make_wechat_withdraw_ticket),
     url(r'^apply_wechat_withdraw/(?P<withdraw_key>[^/]+)/(?P<sign>[^/]+)/$', core.views.apply_wechat_withdraw),
-    url(r'^send_redpack/(?P<appid>[^/]+)/$', core.views.send_redpack),
+    url(r'^send_redpack/(?P<appid>[^/]+)/$', core.views.wxpay.send_redpack),
 
     # JSSDK
     url(r'^wx_jssdk/(?P<appid>[^/]+)/$', core.views.wx_jssdk),
