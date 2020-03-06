@@ -914,6 +914,7 @@ class WechatRedpack(models.Model):
 
     amount = models.IntegerField(
         verbose_name='发放金额',
+        default=0,
     )
 
     result = models.TextField(
